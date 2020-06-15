@@ -3,11 +3,11 @@ package cli
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/chzyer/readline"
+	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/pkg/version"
 )
 
@@ -27,6 +27,10 @@ type Shell struct {
 
 func (s *Shell) initCompleters() {
 	s.mainCompleter = readline.NewPrefixCompleter(
+		readline.PcItem("debug",
+			readline.PcItem("on"),
+			readline.PcItem("off"),
+		),
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
 		readline.PcItem("interact"),
@@ -60,7 +64,7 @@ func (s *Shell) initReadline() {
 	s.initCompleters()
 
 	l, err := readline.NewEx(&readline.Config{
-		Prompt:              "\033[31mmockc2>\033[0m ",
+		Prompt:              "mockc2> ",
 		HistoryFile:         "/tmp/mockc2.tmp",
 		HistorySearchFold:   true,
 		AutoComplete:        s.completer(),
@@ -73,7 +77,6 @@ func (s *Shell) initReadline() {
 
 	s.rl = l
 	s.setMenu(Main)
-	log.SetOutput(s.rl.Stderr())
 }
 
 func (s *Shell) prompt() string {
@@ -81,9 +84,9 @@ func (s *Shell) prompt() string {
 	default:
 		fallthrough
 	case Main:
-		return "\033[31mmockc2>\033[0m "
+		return "mockc2> "
 	case Agent:
-		return "\033[31mmockc2[\033[32magent\033[31m][\033[33mID\033[31m]>\033[0m "
+		return "agent[1]> "
 	}
 }
 
@@ -125,6 +128,8 @@ func (s *Shell) Run() {
 
 func (s *Shell) mainMenuHandler(cmd []string) {
 	switch cmd[0] {
+	case "debug":
+		debugCommand(cmd)
 	case "exit", "quit":
 		s.exit()
 	case "help", "?":
@@ -134,7 +139,7 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 	case "version":
 		printVersion()
 	default:
-		println(cmd)
+		log.Warn("Invalid command")
 	}
 }
 
@@ -147,11 +152,12 @@ func (s *Shell) agentMenuHandler(cmd []string) {
 	case "main":
 		s.setMenu(Main)
 	default:
-		println(cmd)
+		log.Warn("Invalid command")
 	}
 }
 
 func (s *Shell) exit() {
+	log.Warn("Shutting down")
 	os.Exit(0)
 }
 
@@ -164,6 +170,23 @@ func filterInput(r rune) (rune, bool) {
 	return r, true
 }
 
+func debugCommand(cmd []string) {
+	if len(cmd) == 2 {
+		if cmd[1] == "on" {
+			log.DebugEnabled = true
+			log.Success("Debug output on")
+			return
+		} else if cmd[1] == "off" {
+			log.DebugEnabled = false
+			log.Success("Debug output off")
+			return
+		}
+	}
+
+	log.Warn("Invalid command")
+	log.Info("debug [on|off]")
+}
+
 func printVersion() {
 	fmt.Printf("  Version   %s\n", version.Version)
 	fmt.Printf("  BuildDate %s\n", version.BuildDate)
@@ -172,6 +195,7 @@ func printVersion() {
 func printMainMenuHelp() {
 	fmt.Println("Main Menu Help")
 	fmt.Println("")
+	fmt.Println("  debug       Enable or disable debug output [on/off]")
 	fmt.Println("  exit        Exit and shut down mockc2")
 	fmt.Println("  help        Print the main menu help")
 	fmt.Println("  interact    Interact with connected agents")
