@@ -1,14 +1,11 @@
 package cli
 
 import (
-	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/chzyer/readline"
 	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/pkg/version"
 )
 
 type shellMenu int
@@ -131,13 +128,13 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 	case "debug":
 		debugCommand(cmd)
 	case "exit", "quit":
-		s.exit()
+		exitCommand(cmd)
 	case "help", "?":
-		printMainMenuHelp()
+		mainMenuCommand(cmd)
 	case "interact":
 		s.setMenu(Agent)
 	case "version":
-		printVersion()
+		versionCommand(cmd)
 	default:
 		log.Warn("Invalid command")
 	}
@@ -146,19 +143,14 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 func (s *Shell) agentMenuHandler(cmd []string) {
 	switch cmd[0] {
 	case "exit", "quit":
-		s.exit()
+		exitCommand(cmd)
 	case "help", "?":
-		printAgentMenuHelp()
+		agentMenuCommand(cmd)
 	case "main":
 		s.setMenu(Main)
 	default:
 		log.Warn("Invalid command")
 	}
-}
-
-func (s *Shell) exit() {
-	log.Warn("Shutting down")
-	os.Exit(0)
 }
 
 func filterInput(r rune) (rune, bool) {
@@ -168,51 +160,4 @@ func filterInput(r rune) (rune, bool) {
 		return r, false
 	}
 	return r, true
-}
-
-func debugCommand(cmd []string) {
-	if len(cmd) == 2 {
-		if cmd[1] == "on" {
-			log.DebugEnabled = true
-			log.Success("Debug output on")
-			return
-		} else if cmd[1] == "off" {
-			log.DebugEnabled = false
-			log.Success("Debug output off")
-			return
-		}
-	}
-
-	log.Warn("Invalid command")
-	log.Info("debug [on|off]")
-}
-
-func printVersion() {
-	fmt.Printf("  Version   %s\n", version.Version)
-	fmt.Printf("  BuildDate %s\n", version.BuildDate)
-}
-
-func printMainMenuHelp() {
-	fmt.Println("Main Menu Help")
-	fmt.Println("")
-	fmt.Println("  debug       Enable or disable debug output [on/off]")
-	fmt.Println("  exit        Exit and shut down mockc2")
-	fmt.Println("  help        Print the main menu help")
-	fmt.Println("  interact    Interact with connected agents")
-	fmt.Println("  listener    Start or shutdown a protocol listener")
-	fmt.Println("  list        List connected agents")
-	fmt.Println("  version     Print the mockc2 server version")
-	fmt.Println("")
-}
-
-func printAgentMenuHelp() {
-	fmt.Println("Agent Menu Help")
-	fmt.Println("")
-	fmt.Println("  exec        Execute a command on the agent")
-	fmt.Println("  exit        Exit and shut down mockc2")
-	fmt.Println("  help        Print the agent menu help")
-	fmt.Println("  download    Download a file from the agent")
-	fmt.Println("  main        Return to the main menu")
-	fmt.Println("  upload      Upload a file to the agent")
-	fmt.Println("")
 }
