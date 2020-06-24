@@ -6,6 +6,7 @@ import (
 
 	"github.com/chzyer/readline"
 	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
 type shellMenu int
@@ -31,7 +32,12 @@ func (s *Shell) initCompleters() {
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
 		readline.PcItem("interact"),
-		readline.PcItem("listener"),
+		readline.PcItem("listener",
+			readline.PcItem("start",
+				readline.PcItemDynamic(protocolNames()),
+			),
+			readline.PcItem("stop"),
+		),
 		readline.PcItem("list"),
 		readline.PcItem("version"),
 	)
@@ -44,6 +50,12 @@ func (s *Shell) initCompleters() {
 		readline.PcItem("main"),
 		readline.PcItem("upload"),
 	)
+}
+
+func protocolNames() func(string) []string {
+	return func(line string) []string {
+		return protocol.Names()
+	}
 }
 
 func (s *Shell) completer() *readline.PrefixCompleter {
@@ -133,6 +145,8 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 		mainMenuCommand(cmd)
 	case "interact":
 		s.setMenu(Agent)
+	case "listener":
+		listenerCommand(cmd)
 	case "version":
 		versionCommand(cmd)
 	default:
