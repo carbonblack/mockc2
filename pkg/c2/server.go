@@ -64,7 +64,6 @@ func (s *Server) serve() {
 		} else {
 			s.wg.Add(1)
 			go func() {
-				//s.handleConnection(conn)
 				s.protocolHandler.HandleConnection(conn, s.quit)
 				s.wg.Done()
 			}()
