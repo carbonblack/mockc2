@@ -6,15 +6,17 @@ import (
 
 	"github.com/chzyer/readline"
 	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
 type shellMenu int
 
 const (
-	Main shellMenu = iota
-	Agent
+	main shellMenu = iota
+	agent
 )
 
+// A Shell represents an interactive interface to the mock C2 code.
 type Shell struct {
 	rl             *readline.Instance
 	mainCompleter  *readline.PrefixCompleter
@@ -31,7 +33,12 @@ func (s *Shell) initCompleters() {
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
 		readline.PcItem("interact"),
-		readline.PcItem("listener"),
+		readline.PcItem("listener",
+			readline.PcItem("start",
+				readline.PcItemDynamic(protocolNames()),
+			),
+			readline.PcItem("stop"),
+		),
 		readline.PcItem("list"),
 		readline.PcItem("version"),
 	)
@@ -46,13 +53,19 @@ func (s *Shell) initCompleters() {
 	)
 }
 
+func protocolNames() func(string) []string {
+	return func(line string) []string {
+		return protocol.Names()
+	}
+}
+
 func (s *Shell) completer() *readline.PrefixCompleter {
 	switch s.menu {
 	default:
 		fallthrough
-	case Main:
+	case main:
 		return s.mainCompleter
-	case Agent:
+	case agent:
 		return s.agentCompleter
 	}
 }
@@ -73,16 +86,16 @@ func (s *Shell) initReadline() {
 	}
 
 	s.rl = l
-	s.setMenu(Main)
+	s.setMenu(main)
 }
 
 func (s *Shell) prompt() string {
 	switch s.menu {
 	default:
 		fallthrough
-	case Main:
+	case main:
 		return "mockc2> "
-	case Agent:
+	case agent:
 		return "agent[1]> "
 	}
 }
@@ -93,6 +106,7 @@ func (s *Shell) setMenu(menu shellMenu) {
 	s.rl.SetPrompt(s.prompt())
 }
 
+// Run starts the interactive shell running.
 func (s *Shell) Run() {
 	s.initReadline()
 	defer s.rl.Close()
@@ -114,9 +128,9 @@ func (s *Shell) Run() {
 
 		if len(cmd) > 0 {
 			switch s.menu {
-			case Main:
+			case main:
 				s.mainMenuHandler(cmd)
-			case Agent:
+			case agent:
 				s.agentMenuHandler(cmd)
 			}
 		}
@@ -132,7 +146,9 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 	case "help", "?":
 		mainMenuCommand(cmd)
 	case "interact":
-		s.setMenu(Agent)
+		s.setMenu(agent)
+	case "listener":
+		listenerCommand(cmd)
 	case "version":
 		versionCommand(cmd)
 	default:
@@ -147,7 +163,7 @@ func (s *Shell) agentMenuHandler(cmd []string) {
 	case "help", "?":
 		agentMenuCommand(cmd)
 	case "main":
-		s.setMenu(Main)
+		s.setMenu(main)
 	default:
 		log.Warn("Invalid command")
 	}
