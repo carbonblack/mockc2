@@ -1,17 +1,35 @@
 package protocol
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"io"
 	"net"
 	"time"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"megaman.genesis.local/sknight/mockc2/pkg/agents"
 )
 
 // A Generic protocol handler simply logs information about connections and
 // the data received.
 type Generic struct {
+}
+
+// ValidateConnection makes sure a real agent is connecting and returns a
+// new instance of the Agent. In the case of the Generic protocol, all
+// connections are accepted.
+func (g Generic) ValidateConnection(conn net.Conn, quit chan interface{}) (*agents.Agent, error) {
+	addr := conn.RemoteAddr().String()
+	h := sha256.Sum256([]byte(addr))
+	id := hex.EncodeToString(h[:])
+
+	a := &agents.Agent{
+		Id:   id,
+		Addr: conn.RemoteAddr(),
+	}
+
+	return a, nil
 }
 
 // HandleConnection handles generic connections by logging.
