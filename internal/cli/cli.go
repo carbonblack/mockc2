@@ -147,6 +147,8 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 		mainMenuCommand(cmd)
 	case "interact":
 		s.setMenu(agent)
+	case "list":
+		listCommand(cmd)
 	case "listener":
 		listenerCommand(cmd)
 	case "version":
