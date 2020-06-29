@@ -1,6 +1,10 @@
 package protocol
 
-import "net"
+import (
+	"net"
+
+	"megaman.genesis.local/sknight/mockc2/pkg/agents"
+)
 
 var protocols map[string]Handler
 
@@ -12,6 +16,7 @@ func init() {
 
 // A Handler represents a type capable of handling and decoding C2 traffic
 type Handler interface {
+	ValidateConnection(conn net.Conn, quit chan interface{}) (*agents.Agent, error)
 	HandleConnection(conn net.Conn, quit chan interface{})
 }
 
