@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"megaman.genesis.local/sknight/mockc2/pkg/agents"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
@@ -64,7 +65,13 @@ func (s *Server) serve() {
 		} else {
 			s.wg.Add(1)
 			go func() {
-				s.protocolHandler.HandleConnection(conn, s.quit)
+				a, err := s.protocolHandler.ValidateConnection(conn, s.quit)
+				if err != nil {
+					log.Warn(err.Error())
+				} else {
+					agents.AddAgent(a)
+					s.protocolHandler.HandleConnection(conn, s.quit)
+				}
 				s.wg.Done()
 			}()
 		}
