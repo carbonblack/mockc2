@@ -25,7 +25,7 @@ func (g Generic) ValidateConnection(conn net.Conn, quit chan interface{}) (*agen
 	id := hex.EncodeToString(h[:])
 
 	a := &agents.Agent{
-		Id:   id,
+		ID:   id,
 		Addr: conn.RemoteAddr(),
 	}
 

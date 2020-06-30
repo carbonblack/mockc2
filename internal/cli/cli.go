@@ -6,6 +6,7 @@ import (
 
 	"github.com/chzyer/readline"
 	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"megaman.genesis.local/sknight/mockc2/pkg/agents"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
@@ -22,6 +23,7 @@ type Shell struct {
 	mainCompleter  *readline.PrefixCompleter
 	agentCompleter *readline.PrefixCompleter
 	menu           shellMenu
+	currentAgentID string
 }
 
 func (s *Shell) initCompleters() {
@@ -32,7 +34,9 @@ func (s *Shell) initCompleters() {
 		),
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
-		readline.PcItem("interact"),
+		readline.PcItem("interact",
+			readline.PcItemDynamic(agentIds()),
+		),
 		readline.PcItem("listener",
 			readline.PcItem("start",
 				readline.PcItemDynamic(protocolNames()),
@@ -56,6 +60,19 @@ func (s *Shell) initCompleters() {
 func protocolNames() func(string) []string {
 	return func(line string) []string {
 		return protocol.Names()
+	}
+}
+
+func agentIds() func(string) []string {
+	return func(line string) []string {
+		l := agents.Agents()
+		ids := make([]string, len(l))
+		i := 0
+		for _, a := range l {
+			ids[i] = a.ID
+			i++
+		}
+		return ids
 	}
 }
 
@@ -96,7 +113,7 @@ func (s *Shell) prompt() string {
 	case main:
 		return "mockc2> "
 	case agent:
-		return "agent[1]> "
+		return "agent[" + s.currentAgentID + "]> "
 	}
 }
 
@@ -146,7 +163,13 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 	case "help", "?":
 		mainMenuCommand(cmd)
 	case "interact":
-		s.setMenu(agent)
+		if agents.Exists(cmd[1]) {
+			s.currentAgentID = cmd[1]
+			s.setMenu(agent)
+		} else {
+			log.Warn("Invalid command")
+			log.Info("interact <agentID>")
+		}
 	case "list":
 		listCommand(cmd)
 	case "listener":
@@ -165,6 +188,7 @@ func (s *Shell) agentMenuHandler(cmd []string) {
 	case "help", "?":
 		agentMenuCommand(cmd)
 	case "main":
+		s.currentAgentID = ""
 		s.setMenu(main)
 	default:
 		log.Warn("Invalid command")
