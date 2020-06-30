@@ -69,7 +69,7 @@ func (s *Server) serve() {
 				if err != nil {
 					log.Warn(err.Error())
 				} else {
-					agents.AddAgent(a)
+					agents.Add(a)
 					s.protocolHandler.HandleConnection(conn, s.quit)
 				}
 				s.wg.Done()
