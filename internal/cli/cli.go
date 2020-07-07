@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/chzyer/readline"
+	"github.com/fatih/color"
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/pkg/agents"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
@@ -104,6 +105,9 @@ func (s *Shell) initReadline() {
 
 	s.rl = l
 	s.setMenu(main)
+
+	color.Output = l.Stdout()
+	color.Error = l.Stderr()
 }
 
 func (s *Shell) prompt() string {
