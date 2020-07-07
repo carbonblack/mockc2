@@ -39,7 +39,7 @@ func (s *Shell) initCompleters() {
 		),
 		readline.PcItem("listener",
 			readline.PcItem("start",
-				readline.PcItemDynamic(protocolNames()),
+				readline.PcItem("generic"),
 			),
 			readline.PcItem("stop"),
 		),
@@ -55,12 +55,6 @@ func (s *Shell) initCompleters() {
 		readline.PcItem("main"),
 		readline.PcItem("upload"),
 	)
-}
-
-func protocolNames() func(string) []string {
-	return func(line string) []string {
-		return c2.ProtocolNames()
-	}
 }
 
 func agentIds() func(string) []string {

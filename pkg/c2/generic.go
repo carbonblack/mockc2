@@ -15,6 +15,11 @@ import (
 type Generic struct {
 }
 
+// SetDelegate saves the delegate for later use.
+func (g Generic) SetDelegate(delegate ProtocolDelegate) {
+
+}
+
 // ValidateConnection makes sure a real agent is connecting and returns a
 // new instance of the Agent. In the case of the Generic protocol, all
 // connections are accepted.

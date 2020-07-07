@@ -1,7 +1,6 @@
 package c2
 
 import (
-	"fmt"
 	"net"
 	"sync"
 
@@ -10,32 +9,37 @@ import (
 
 // A Server represents a running mock C2 server.
 type Server struct {
-	listener        net.Listener
-	quit            chan interface{}
-	wg              sync.WaitGroup
-	port            uint16
-	protocolHandler ProtocolHandler
+	listener net.Listener
+	quit     chan interface{}
+	wg       sync.WaitGroup
+	handler  ProtocolHandler
 }
 
 // NewServer creates a new mock C2 server and starts it listening on the
-// provided port.
-func NewServer(port uint16, protocolHandler ProtocolHandler) (*Server, error) {
-	s := &Server{
-		quit:            make(chan interface{}),
-		port:            port,
-		protocolHandler: protocolHandler,
-	}
-
-	address := fmt.Sprintf(":%d", s.port)
-	l, err := net.Listen("tcp", address)
+// provided address.
+func NewServer(protocol string, address string) (*Server, error) {
+	handler, err := NewProtocolHandler(protocol)
 	if err != nil {
 		return nil, err
 	}
-	s.listener = l
-	log.Debug("Server listening")
+
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		return nil, err
+	}
+
+	s := &Server{
+		listener: listener,
+		quit:     make(chan interface{}),
+		handler:  handler,
+	}
+
+	handler.SetDelegate(s)
 
 	s.wg.Add(1)
 	go s.serve()
+
+	log.Debug("Server listening")
 
 	return s, nil
 }
@@ -63,12 +67,12 @@ func (s *Server) serve() {
 		} else {
 			s.wg.Add(1)
 			go func() {
-				a, err := s.protocolHandler.ValidateConnection(conn, s.quit)
+				a, err := s.handler.ValidateConnection(conn, s.quit)
 				if err != nil {
 					log.Warn(err.Error())
 				} else {
 					AddAgent(a)
-					s.protocolHandler.HandleConnection(conn, s.quit)
+					s.handler.HandleConnection(conn, s.quit)
 				}
 				s.wg.Done()
 			}()
