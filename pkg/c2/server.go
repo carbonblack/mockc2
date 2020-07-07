@@ -6,8 +6,6 @@ import (
 	"sync"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/pkg/agents"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
 // A Server represents a running mock C2 server.
@@ -16,12 +14,12 @@ type Server struct {
 	quit            chan interface{}
 	wg              sync.WaitGroup
 	port            uint16
-	protocolHandler protocol.Handler
+	protocolHandler ProtocolHandler
 }
 
 // NewServer creates a new mock C2 server and starts it listening on the
 // provided port.
-func NewServer(port uint16, protocolHandler protocol.Handler) (*Server, error) {
+func NewServer(port uint16, protocolHandler ProtocolHandler) (*Server, error) {
 	s := &Server{
 		quit:            make(chan interface{}),
 		port:            port,
@@ -69,7 +67,7 @@ func (s *Server) serve() {
 				if err != nil {
 					log.Warn(err.Error())
 				} else {
-					agents.Add(a)
+					AddAgent(a)
 					s.protocolHandler.HandleConnection(conn, s.quit)
 				}
 				s.wg.Done()

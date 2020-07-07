@@ -1,4 +1,4 @@
-package agents
+package c2
 
 import (
 	"net"
@@ -30,8 +30,8 @@ func Agents() []*Agent {
 	return results
 }
 
-// Add adds a new agent to the list of seen agents.
-func Add(agent *Agent) {
+// AddAgent adds a new agent to the list of seen agents.
+func AddAgent(agent *Agent) {
 	if a, ok := agents[agent.ID]; ok {
 		a.LastSeen = time.Now()
 	} else {
@@ -40,8 +40,8 @@ func Add(agent *Agent) {
 	}
 }
 
-// Exists checks if a given agent ID is in the list of agents.
-func Exists(ID string) bool {
+// AgentExists checks if a given agent ID is in the list of agents.
+func AgentExists(ID string) bool {
 	if _, ok := agents[ID]; ok {
 		return true
 	}

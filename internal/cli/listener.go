@@ -5,7 +5,6 @@ import (
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/pkg/c2"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
 var serverList map[uint16]*c2.Server
@@ -28,7 +27,7 @@ func listenerCommand(cmd []string) {
 				return
 			}
 
-			handler := protocol.HandlerByName(cmd[2])
+			handler := c2.ProtocolHandlerByName(cmd[2])
 			if handler != nil {
 				s, err := c2.NewServer(port, handler)
 				if err != nil {
