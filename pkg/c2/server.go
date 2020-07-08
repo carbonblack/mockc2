@@ -1,8 +1,11 @@
 package c2
 
 import (
+	"encoding/hex"
+	"io"
 	"net"
 	"sync"
+	"time"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 )
@@ -12,30 +15,34 @@ type Server struct {
 	listener net.Listener
 	quit     chan interface{}
 	wg       sync.WaitGroup
-	handler  ProtocolHandler
+	protocol string
+}
+
+type c2Conn struct {
+	conn    net.Conn
+	quit    chan interface{}
+	handler ProtocolHandler
 }
 
 // NewServer creates a new mock C2 server and starts it listening on the
 // provided address.
 func NewServer(protocol string, address string) (*Server, error) {
-	handler, err := NewProtocolHandler(protocol)
-	if err != nil {
-		return nil, err
-	}
-
-	listener, err := net.Listen("tcp", address)
+	_, err := NewProtocolHandler(protocol)
 	if err != nil {
 		return nil, err
 	}
 
 	s := &Server{
-		listener: listener,
 		quit:     make(chan interface{}),
-		handler:  handler,
+		protocol: protocol,
 	}
 
-	handler.SetDelegate(s)
+	l, err := net.Listen("tcp", address)
+	if err != nil {
+		return nil, err
+	}
 
+	s.listener = l
 	s.wg.Add(1)
 	go s.serve()
 
@@ -66,16 +73,76 @@ func (s *Server) serve() {
 			}
 		} else {
 			s.wg.Add(1)
+
+			c, err := newC2Conn(conn, s)
+			if err != nil {
+				return
+			}
+
 			go func() {
-				a, err := s.handler.ValidateConnection(conn, s.quit)
-				if err != nil {
-					log.Warn(err.Error())
-				} else {
-					AddAgent(a)
-					s.handler.HandleConnection(conn, s.quit)
-				}
-				s.wg.Done()
+				defer s.wg.Done()
+				c.receiveLoop()
 			}()
 		}
 	}
+}
+
+func newC2Conn(netConn net.Conn, s *Server) (*c2Conn, error) {
+	handler, err := NewProtocolHandler(s.protocol)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &c2Conn{
+		conn:    netConn,
+		quit:    s.quit,
+		handler: handler,
+	}
+
+	c.handler.SetDelegate(c)
+
+	return c, nil
+}
+
+func (c *c2Conn) receiveLoop() {
+	defer c.conn.Close()
+
+	log.Info("connection from %v", c.conn.RemoteAddr())
+
+	buf := make([]byte, 2048)
+
+	for {
+		select {
+		case <-c.quit:
+			return
+		default:
+			c.conn.SetDeadline(time.Now().Add(200 * time.Millisecond))
+			n, err := c.conn.Read(buf)
+			if n > 0 {
+				c.handler.ReceiveData(buf[:n])
+			}
+			if err != nil {
+				if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+					continue
+				} else if err != io.EOF {
+					log.Warn("read error %v", err)
+					return
+				}
+			}
+			if n == 0 {
+				return
+			}
+		}
+	}
+}
+
+func (c *c2Conn) SendData(data []byte) {
+	_, err := c.conn.Write(data)
+	if err != nil {
+		log.Warn("write error %v", err)
+	}
+
+	// TODO handle writing less than the total bytes of data
+
+	log.Debug("sent\n" + hex.Dump(data))
 }
