@@ -20,4 +20,11 @@ func (g *Generic) SetDelegate(delegate ProtocolDelegate) {
 // ReceiveData just logs information about data received.
 func (g *Generic) ReceiveData(data []byte) {
 	log.Debug("received\n" + hex.Dump(data))
+
+	a := &Agent{}
+	g.delegate.AgentConnected(a)
+}
+
+// Close cleans up any uzed resources
+func (g *Generic) Close() {
 }

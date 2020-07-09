@@ -1,6 +1,7 @@
 package c2
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"io"
 	"net"
@@ -114,6 +115,7 @@ func (c *c2Conn) receiveLoop() {
 	for {
 		select {
 		case <-c.quit:
+			c.handler.Close()
 			return
 		default:
 			c.conn.SetDeadline(time.Now().Add(200 * time.Millisecond))
@@ -145,4 +147,21 @@ func (c *c2Conn) SendData(data []byte) {
 	// TODO handle writing less than the total bytes of data
 
 	log.Debug("sent\n" + hex.Dump(data))
+}
+
+func (c *c2Conn) CloseConnection() {
+	c.conn.Close()
+}
+
+func (c *c2Conn) AgentConnected(a *Agent) {
+	// Default Agent ID to a hash of the IP if not specified
+	if a.ID == "" {
+		addr := c.conn.RemoteAddr().String()
+		h := sha256.Sum256([]byte(addr))
+		a.ID = hex.EncodeToString(h[:])
+	}
+
+	a.Addr = c.conn.RemoteAddr()
+
+	AddAgent(a)
 }
