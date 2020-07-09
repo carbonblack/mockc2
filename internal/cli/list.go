@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"megaman.genesis.local/sknight/mockc2/pkg/agents"
+	"megaman.genesis.local/sknight/mockc2/pkg/c2"
 )
 
 func listCommand(cmd []string) {
@@ -11,7 +11,7 @@ func listCommand(cmd []string) {
 
 	// TODO: Need to print fixed width formatting and better timestamp for last seen
 	fmt.Printf("Id                                                                 IP                  Last Seen\n")
-	for _, a := range agents.Agents() {
+	for _, a := range c2.Agents() {
 		fmt.Printf("%s     %v     %s\n", a.ID, a.Addr, a.LastSeen)
 	}
 }

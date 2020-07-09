@@ -1,11 +1,11 @@
 package cli
 
 import (
+	"fmt"
 	"strconv"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/pkg/c2"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
 var serverList map[uint16]*c2.Server
@@ -16,7 +16,7 @@ func listenerCommand(cmd []string) {
 	}
 
 	if len(cmd) >= 3 {
-		if cmd[1] == "start" {
+		if cmd[1] == "start" && len(cmd) >= 4 {
 			c, err := strconv.ParseUint(cmd[3], 0, 16)
 			if err != nil {
 				return
@@ -28,17 +28,18 @@ func listenerCommand(cmd []string) {
 				return
 			}
 
-			handler := protocol.HandlerByName(cmd[2])
-			if handler != nil {
-				s, err := c2.NewServer(port, handler)
-				if err != nil {
-					log.Warn(err.Error())
-					return
-				}
-				serverList[port] = s
+			protocol := cmd[2]
+			address := fmt.Sprintf(":%d", port)
+
+			s, err := c2.NewServer(protocol, address)
+			if err != nil {
+				log.Warn(err.Error())
 				return
 			}
-		} else if cmd[1] == "stop" {
+
+			serverList[port] = s
+			return
+		} else if cmd[1] == "stop" && len(cmd) >= 3 {
 			c, err := strconv.ParseUint(cmd[2], 0, 16)
 			if err != nil {
 				return
@@ -51,10 +52,11 @@ func listenerCommand(cmd []string) {
 			} else {
 				log.Warn("Nothing listening on port %d", port)
 			}
+
+			return
 		}
-		return
 	}
 
 	log.Warn("Invalid command")
-	log.Info("listener [start|stop] <port>")
+	log.Info("listener [start|stop] <protocol> <port>")
 }

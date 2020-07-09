@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/chzyer/readline"
+	"github.com/fatih/color"
 	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/pkg/agents"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
+	"megaman.genesis.local/sknight/mockc2/pkg/c2"
 )
 
 type shellMenu int
@@ -39,7 +39,8 @@ func (s *Shell) initCompleters() {
 		),
 		readline.PcItem("listener",
 			readline.PcItem("start",
-				readline.PcItemDynamic(protocolNames()),
+				readline.PcItem("generic"),
+				readline.PcItem("hotcroissant"),
 			),
 			readline.PcItem("stop"),
 		),
@@ -57,15 +58,9 @@ func (s *Shell) initCompleters() {
 	)
 }
 
-func protocolNames() func(string) []string {
-	return func(line string) []string {
-		return protocol.Names()
-	}
-}
-
 func agentIds() func(string) []string {
 	return func(line string) []string {
-		l := agents.Agents()
+		l := c2.Agents()
 		ids := make([]string, len(l))
 		i := 0
 		for _, a := range l {
@@ -104,6 +99,9 @@ func (s *Shell) initReadline() {
 
 	s.rl = l
 	s.setMenu(main)
+
+	color.Output = l.Stdout()
+	color.Error = l.Stderr()
 }
 
 func (s *Shell) prompt() string {
@@ -163,7 +161,7 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 	case "help", "?":
 		mainMenuCommand(cmd)
 	case "interact":
-		if agents.Exists(cmd[1]) {
+		if c2.AgentExists(cmd[1]) {
 			s.currentAgentID = cmd[1]
 			s.setMenu(agent)
 		} else {
