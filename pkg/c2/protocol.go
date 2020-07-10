@@ -26,7 +26,9 @@ func NewProtocolHandler(protocol string) (ProtocolHandler, error) {
 	case "generic":
 		return &Generic{}, nil
 	case "hotcroissant":
-		return &HotCroissant{}, nil
+		return &hotCroissant{}, nil
+	case "rifdoor":
+		return &Rifdoor{}, nil
 	default:
 		return nil, fmt.Errorf("unknown protocol %s", protocol)
 	}

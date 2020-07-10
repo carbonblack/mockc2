@@ -6,17 +6,19 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
 	"io/ioutil"
 	"net"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"megaman.genesis.local/sknight/mockc2/internal/queue"
 )
 
 const (
 	hcBeacon = 0x7c8
 )
 
+// HotCroissant is a protocol handler capable of communicating with the
+// HotCroissant malware family.
 type HotCroissant struct {
 	delegate ProtocolDelegate
 	dataChan chan byte
@@ -38,10 +40,13 @@ type hcCommand struct {
 	data   []byte
 }
 
+// SetDelegate saves the delegate for later use.
 func (h *HotCroissant) SetDelegate(delegate ProtocolDelegate) {
 	h.delegate = delegate
 }
 
+// ReceiveData saves the network data and processes it when a full command has
+// been received.
 func (h *HotCroissant) ReceiveData(data []byte) {
 	log.Debug("received\n" + hex.Dump(data))
 
@@ -50,59 +55,33 @@ func (h *HotCroissant) ReceiveData(data []byte) {
 		go h.processData()
 	}
 
-	for _, b := range data {
-		h.dataChan <- b
-	}
+	queue.Put(h.dataChan, data)
 }
 
+// Close cleans up any uzed resources.
 func (h *HotCroissant) Close() {
 	close(h.dataChan)
 }
 
-// read will get n bytes from the received data or wait until it's available.
-func (h *HotCroissant) read(n int) ([]byte, error) {
-	var result []byte
-
-ReadLoop:
-	for {
-		select {
-		case b, ok := <-h.dataChan:
-			if ok {
-				result = append(result, b)
-				if len(result) == n {
-					break ReadLoop
-				}
-			} else {
-				return nil, errors.New("dataChan is closed")
-			}
-		}
-	}
-
-	return result, nil
-}
-
 func (h *HotCroissant) processData() {
-	log.Debug("processData start")
-	defer log.Debug("processData stop")
-
 	for {
 		ec := hcEncodedCommand{}
 
-		b, err := h.read(4)
+		b, err := queue.Get(h.dataChan, 4)
 		if err != nil {
 			h.delegate.CloseConnection()
 			return
 		}
 		ec.compressedSize = binary.LittleEndian.Uint32(b)
 
-		b, err = h.read(4)
+		b, err = queue.Get(h.dataChan, 4)
 		if err != nil {
 			h.delegate.CloseConnection()
 			return
 		}
 		ec.uncompressedSize = binary.LittleEndian.Uint32(b)
 
-		b, err = h.read(int(ec.compressedSize))
+		b, err = queue.Get(h.dataChan, int(ec.compressedSize))
 		if err != nil {
 			h.delegate.CloseConnection()
 			return
@@ -137,10 +116,7 @@ func (h *HotCroissant) proccessCommand(command hcCommand) {
 		hash := sha256.Sum256(command.data)
 		a.ID = hex.EncodeToString(hash[:])
 
-		// TODO send queued commands
-
 		h.delegate.AgentConnected(a)
-		// h.delegate.CloseConnection()
 	}
 }
 
@@ -151,7 +127,7 @@ func logCommand(c hcCommand) {
 	log.Debug("  Opt2: 0x%08x", c.opt2)
 	log.Debug("  Opt3: 0x%08x", c.opt3)
 	log.Debug("  Size: 0x%08x", c.size)
-	log.Debug("%s", c.data)
+	log.Debug("  Data:\n%s", hex.Dump(c.data))
 }
 
 func decodeCommand(ec hcEncodedCommand) (hcCommand, error) {
@@ -161,8 +137,6 @@ func decodeCommand(ec hcEncodedCommand) (hcCommand, error) {
 	if err != nil {
 		return hcCommand{}, err
 	}
-
-	log.Debug("decoded\n" + hex.Dump(decompressed))
 
 	buf := bytes.NewReader(decompressed)
 
