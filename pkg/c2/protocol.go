@@ -26,7 +26,7 @@ func NewProtocolHandler(protocol string) (ProtocolHandler, error) {
 	case "generic":
 		return &Generic{}, nil
 	case "hotcroissant":
-		return &hotCroissant{}, nil
+		return &HotCroissant{}, nil
 	case "rifdoor":
 		return &Rifdoor{}, nil
 	default:
