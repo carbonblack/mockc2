@@ -182,6 +182,8 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 
 func (s *Shell) agentMenuHandler(cmd []string) {
 	switch cmd[0] {
+	case "exec":
+		execCommand(s.currentAgentID, cmd)
 	case "exit", "quit":
 		exitCommand(cmd)
 	case "help", "?":

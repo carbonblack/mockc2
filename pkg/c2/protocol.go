@@ -17,6 +17,7 @@ type ProtocolDelegate interface {
 type ProtocolHandler interface {
 	SetDelegate(delegate ProtocolDelegate)
 	ReceiveData(data []byte)
+	SendCommand(command interface{})
 	Close()
 }
 

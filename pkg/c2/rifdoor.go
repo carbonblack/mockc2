@@ -4,13 +4,17 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"strings"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/internal/queue"
 )
 
 const (
-	rifdoorBeacon = 0x9e2
+	rifdoorBeacon   uint32 = 0x9e2
+	rifdoorRequest  uint32 = 0x4e3a
+	rifdoorResponse uint32 = 0xa021
+	rifdoorEnd      uint32 = 0x1055
 )
 
 // Rifdoor is a protocol handler capable of communicating with the Rifdoor
@@ -18,6 +22,7 @@ const (
 type Rifdoor struct {
 	delegate ProtocolDelegate
 	dataChan chan byte
+	checksum uint32
 }
 
 type rifdoorCommand struct {
@@ -44,6 +49,52 @@ func (r *Rifdoor) ReceiveData(data []byte) {
 	}
 
 	queue.Put(r.dataChan, data)
+}
+
+// SendCommand sends a command to the connected agent.
+func (r *Rifdoor) SendCommand(command interface{}) {
+	switch c := command.(type) {
+	case ExecuteCommand:
+		commandLine := strings.TrimSpace(c.Name + " " + strings.Join(c.Args, " "))
+
+		rc := rifdoorCommand{
+			opcode:   rifdoorRequest,
+			checksum: r.checksum,
+			zero:     0x0,
+			size:     uint32(len(commandLine)),
+			data:     []byte(commandLine),
+		}
+		data := r.encodeCommand(rc)
+		r.delegate.SendData(data)
+
+		rc = rifdoorCommand{
+			opcode:   rifdoorEnd,
+			checksum: r.checksum,
+			zero:     0x0,
+			size:     0x0,
+		}
+		data = r.encodeCommand(rc)
+		r.delegate.SendData(data)
+	case UploadCommand:
+		log.Warn("rifdoor doesn't support file upload")
+	case DownloadCommand:
+		log.Warn("rifdoor doesn't support file download")
+	}
+}
+
+func (r *Rifdoor) encodeCommand(command rifdoorCommand) []byte {
+	result := make([]byte, 16+command.size)
+
+	binary.LittleEndian.PutUint32(result[0:], command.opcode)
+	binary.LittleEndian.PutUint32(result[4:], command.checksum)
+	binary.LittleEndian.PutUint32(result[8:], command.zero)
+	binary.LittleEndian.PutUint32(result[12:], command.size)
+
+	if command.size > 0 {
+		copy(result[16:], rifdoorCipher(command.data))
+	}
+
+	return result
 }
 
 // Close cleans up any uzed resources.
@@ -84,13 +135,21 @@ func (r *Rifdoor) processData() {
 func (r *Rifdoor) processCommand(command rifdoorCommand) {
 	r.logCommand(command)
 
+	r.checksum = command.checksum
+
 	switch command.opcode {
 	case rifdoorBeacon:
 		a := &Agent{}
-		hash := sha256.Sum256(command.data)
+		data := make([]byte, 4)
+		binary.LittleEndian.PutUint32(data, command.checksum)
+		hash := sha256.Sum256(data)
 		a.ID = hex.EncodeToString(hash[:])
 
 		r.delegate.AgentConnected(a)
+	case rifdoorResponse:
+		log.Info(string(command.data))
+	case rifdoorEnd:
+		r.delegate.CloseConnection()
 	}
 }
 

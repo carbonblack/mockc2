@@ -25,6 +25,18 @@ func (g *Generic) ReceiveData(data []byte) {
 	g.delegate.AgentConnected(a)
 }
 
+// SendCommand sends a command to the connected agent.
+func (g *Generic) SendCommand(command interface{}) {
+	switch command.(type) {
+	case ExecuteCommand:
+		log.Warn("generic doesn't support command execution")
+	case UploadCommand:
+		log.Warn("generic doesn't support file upload")
+	case DownloadCommand:
+		log.Warn("generic doesn't support file download")
+	}
+}
+
 // Close cleans up any uzed resources
 func (g *Generic) Close() {
 }
