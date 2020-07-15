@@ -16,6 +16,12 @@ type Agent struct {
 	ID       string
 	LastSeen time.Time
 	Addr     net.Addr
+	conn     *c2Conn
+}
+
+// SendCommand instructs the agent to run the given command.
+func (a *Agent) SendCommand(command interface{}) {
+	a.conn.SendCommand(command)
 }
 
 // Agents returns the list of agents that have been seen.
@@ -32,12 +38,8 @@ func Agents() []*Agent {
 
 // AddAgent adds a new agent to the list of seen agents.
 func AddAgent(agent *Agent) {
-	if a, ok := agents[agent.ID]; ok {
-		a.LastSeen = time.Now()
-	} else {
-		agent.LastSeen = time.Now()
-		agents[agent.ID] = agent
-	}
+	agent.LastSeen = time.Now()
+	agents[agent.ID] = agent
 }
 
 // AgentExists checks if a given agent ID is in the list of agents.
@@ -47,4 +49,9 @@ func AgentExists(ID string) bool {
 	}
 
 	return false
+}
+
+// AgentByID returns an agent instance given the corresponding Agent ID.
+func AgentByID(ID string) *Agent {
+	return agents[ID]
 }

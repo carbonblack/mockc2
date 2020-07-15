@@ -149,6 +149,10 @@ func (c *c2Conn) SendData(data []byte) {
 	log.Debug("sent\n" + hex.Dump(data))
 }
 
+func (c *c2Conn) SendCommand(command interface{}) {
+	c.handler.SendCommand(command)
+}
+
 func (c *c2Conn) CloseConnection() {
 	c.conn.Close()
 }
@@ -162,6 +166,7 @@ func (c *c2Conn) AgentConnected(a *Agent) {
 	}
 
 	a.Addr = c.conn.RemoteAddr()
+	a.conn = c
 
 	AddAgent(a)
 }
