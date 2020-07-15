@@ -58,6 +58,18 @@ func (h *HotCroissant) ReceiveData(data []byte) {
 	queue.Put(h.dataChan, data)
 }
 
+// SendCommand sends a command to the connected agent.
+func (h *HotCroissant) SendCommand(command interface{}) {
+	switch command.(type) {
+	case ExecuteCommand:
+		log.Warn("hotcroissant doesn't support command execution")
+	case UploadCommand:
+		log.Warn("hotcroissant doesn't support file upload")
+	case DownloadCommand:
+		log.Warn("hotcroissant doesn't support file download")
+	}
+}
+
 // Close cleans up any uzed resources.
 func (h *HotCroissant) Close() {
 	close(h.dataChan)
