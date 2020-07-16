@@ -150,7 +150,7 @@ func (c *c2Conn) SendData(data []byte) {
 }
 
 func (c *c2Conn) SendCommand(command interface{}) {
-	c.handler.SendCommand(command)
+	go c.handler.SendCommand(command)
 }
 
 func (c *c2Conn) CloseConnection() {
