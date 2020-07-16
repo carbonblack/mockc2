@@ -187,6 +187,8 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 
 func (s *Shell) agentMenuHandler(cmd []string) {
 	switch cmd[0] {
+	case "download":
+		downloadCommand(s.currentAgentID, cmd)
 	case "exec":
 		execCommand(s.currentAgentID, cmd)
 	case "exit", "quit":
@@ -196,6 +198,8 @@ func (s *Shell) agentMenuHandler(cmd []string) {
 	case "main":
 		s.currentAgentID = ""
 		s.setMenu(main)
+	case "upload":
+		uploadCommand(s.currentAgentID, cmd)
 	default:
 		log.Warn("Invalid command")
 	}
