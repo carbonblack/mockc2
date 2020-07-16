@@ -6,6 +6,8 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
+	"github.com/kballard/go-shellquote"
+
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/pkg/c2"
 )
@@ -140,14 +142,17 @@ func (s *Shell) Run() {
 		}
 
 		line = strings.TrimSpace(line)
-		cmd := strings.Fields(line)
-
-		if len(cmd) > 0 {
-			switch s.menu {
-			case main:
-				s.mainMenuHandler(cmd)
-			case agent:
-				s.agentMenuHandler(cmd)
+		cmd, err := shellquote.Split(line)
+		if err != nil {
+			log.Warn("Error parsing command")
+		} else {
+			if len(cmd) > 0 {
+				switch s.menu {
+				case main:
+					s.mainMenuHandler(cmd)
+				case agent:
+					s.agentMenuHandler(cmd)
+				}
 			}
 		}
 	}
