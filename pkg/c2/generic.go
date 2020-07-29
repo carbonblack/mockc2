@@ -40,3 +40,8 @@ func (g *Generic) SendCommand(command interface{}) {
 // Close cleans up any uzed resources
 func (g *Generic) Close() {
 }
+
+// NeedsTLS returns whether the protocol runs over TLS or not.
+func (g *Generic) NeedsTLS() bool {
+	return false
+}
