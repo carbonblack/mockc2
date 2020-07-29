@@ -91,6 +91,11 @@ func (h *HotCroissant) Close() {
 	close(h.dataChan)
 }
 
+// NeedsTLS returns whether the protocol runs over TLS or not.
+func (h *HotCroissant) NeedsTLS() bool {
+	return false
+}
+
 func (h *HotCroissant) execute(command string) {
 	// Start shell
 	c := hcCommand{}

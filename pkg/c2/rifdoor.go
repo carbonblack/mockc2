@@ -102,6 +102,11 @@ func (r *Rifdoor) Close() {
 	close(r.dataChan)
 }
 
+// NeedsTLS returns whether the protocol runs over TLS or not.
+func (r *Rifdoor) NeedsTLS() bool {
+	return false
+}
+
 func (r *Rifdoor) processData() {
 	for {
 		command := rifdoorCommand{}

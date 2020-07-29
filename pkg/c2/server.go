@@ -2,6 +2,7 @@ package c2
 
 import (
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"io"
 	"net"
@@ -28,7 +29,7 @@ type c2Conn struct {
 // NewServer creates a new mock C2 server and starts it listening on the
 // provided address.
 func NewServer(protocol string, address string) (*Server, error) {
-	_, err := NewProtocolHandler(protocol)
+	handler, err := NewProtocolHandler(protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,24 @@ func NewServer(protocol string, address string) (*Server, error) {
 		protocol: protocol,
 	}
 
-	l, err := net.Listen("tcp", address)
+	var l net.Listener
+	if handler.NeedsTLS() {
+		certPEM, keyPEM, err := createCertificate()
+		if err != nil {
+			return nil, err
+		}
+
+		cer, err := tls.X509KeyPair(certPEM, keyPEM)
+		if err != nil {
+			return nil, err
+		}
+
+		config := &tls.Config{Certificates: []tls.Certificate{cer}}
+		l, err = tls.Listen("tcp", address, config)
+	} else {
+		l, err = net.Listen("tcp", address)
+	}
+
 	if err != nil {
 		return nil, err
 	}

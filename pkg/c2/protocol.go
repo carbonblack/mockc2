@@ -15,6 +15,7 @@ type ProtocolDelegate interface {
 // A ProtocolHandler represents a type capable of handling and decoding C2
 // traffic.
 type ProtocolHandler interface {
+	NeedsTLS() bool
 	SetDelegate(delegate ProtocolDelegate)
 	ReceiveData(data []byte)
 	SendCommand(command interface{})
