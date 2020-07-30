@@ -1,37 +1,20 @@
-package c2
+package protocol
 
-import (
-	"fmt"
-)
-
-// A ProtocolDelegate represents an external delegate that the protocolhandler
-// can notify about data being processed.
-type ProtocolDelegate interface {
+// A Delegate represents an external delegate that the protocolhandler can
+// notify about data being processed.
+type Delegate interface {
 	SendData(data []byte)
-	AgentConnected(a *Agent)
+	AgentConnected(id string)
 	CloseConnection()
 }
 
-// A ProtocolHandler represents a type capable of handling and decoding C2
-// traffic.
-type ProtocolHandler interface {
+// A Handler represents a type capable of handling and decoding C2 traffic.
+type Handler interface {
 	NeedsTLS() bool
-	SetDelegate(delegate ProtocolDelegate)
+	SetDelegate(delegate Delegate)
 	ReceiveData(data []byte)
-	SendCommand(command interface{})
+	Execute(name string, args []string)
+	Upload(source string, destination string)
+	Download(source string, destination string)
 	Close()
-}
-
-// NewProtocolHandler creates a concrete instance of a given protocol handler.
-func NewProtocolHandler(protocol string) (ProtocolHandler, error) {
-	switch protocol {
-	case "generic":
-		return &Generic{}, nil
-	case "hotcroissant":
-		return &HotCroissant{}, nil
-	case "rifdoor":
-		return &Rifdoor{}, nil
-	default:
-		return nil, fmt.Errorf("unknown protocol %s", protocol)
-	}
 }
