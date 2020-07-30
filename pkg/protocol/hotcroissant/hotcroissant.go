@@ -1,4 +1,4 @@
-package c2
+package hotcroissant
 
 import (
 	"bytes"
@@ -16,36 +16,37 @@ import (
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/internal/queue"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
 const (
-	hcBeacon       = 0x7c8
-	hcFileData     = 0x7e4
-	hcFileComplete = 0x7e5
-	hcFileDownload = 0x7e6
-	hcFileStatus   = 0x7e7
-	hcFileUpload   = 0x7ed
-	hcShellStart   = 0xfa1
-	hcShellData    = 0xfa2
-	hcShellStop    = 0xfa3
+	beacon       = 0x7c8
+	fileData     = 0x7e4
+	fileComplete = 0x7e5
+	fileDownload = 0x7e6
+	fileStatus   = 0x7e7
+	fileUpload   = 0x7ed
+	shellStart   = 0xfa1
+	shellData    = 0xfa2
+	shellStop    = 0xfa3
 )
 
-// HotCroissant is a protocol handler capable of communicating with the
+// Handler is a HotCroissant protocol handler capable of communicating with the
 // HotCroissant malware family.
-type HotCroissant struct {
-	delegate     ProtocolDelegate
+type Handler struct {
+	delegate     protocol.Delegate
 	dataChan     chan byte
 	uploadJobs   map[string]chan int32
 	downloadJobs map[string]*os.File
 }
 
-type hcEncodedCommand struct {
+type encodedCommand struct {
 	compressedSize   uint32
 	uncompressedSize uint32
 	data             []byte
 }
 
-type hcCommand struct {
+type command struct {
 	opcode uint32
 	txnID  int32
 	opt1   int32
@@ -56,13 +57,13 @@ type hcCommand struct {
 }
 
 // SetDelegate saves the delegate for later use.
-func (h *HotCroissant) SetDelegate(delegate ProtocolDelegate) {
+func (h *Handler) SetDelegate(delegate protocol.Delegate) {
 	h.delegate = delegate
 }
 
 // ReceiveData saves the network data and processes it when a full command has
 // been received.
-func (h *HotCroissant) ReceiveData(data []byte) {
+func (h *Handler) ReceiveData(data []byte) {
 	log.Debug("received\n" + hex.Dump(data))
 
 	if h.dataChan == nil {
@@ -73,33 +74,23 @@ func (h *HotCroissant) ReceiveData(data []byte) {
 	queue.Put(h.dataChan, data)
 }
 
-// SendCommand sends a command to the connected agent.
-func (h *HotCroissant) SendCommand(command interface{}) {
-	switch c := command.(type) {
-	case ExecuteCommand:
-		commandLine := strings.TrimSpace(c.Name + " " + strings.Join(c.Args, " "))
-		h.execute(commandLine)
-	case UploadCommand:
-		h.upload(c.Source, c.Destination)
-	case DownloadCommand:
-		h.download(c.Source, c.Destination)
-	}
-}
-
 // Close cleans up any uzed resources.
-func (h *HotCroissant) Close() {
+func (h *Handler) Close() {
 	close(h.dataChan)
 }
 
 // NeedsTLS returns whether the protocol runs over TLS or not.
-func (h *HotCroissant) NeedsTLS() bool {
+func (h *Handler) NeedsTLS() bool {
 	return false
 }
 
-func (h *HotCroissant) execute(command string) {
+// Execute runs a command on the connected agent.
+func (h *Handler) Execute(name string, args []string) {
+	commandLine := strings.TrimSpace(name + " " + strings.Join(args, " "))
+
 	// Start shell
-	c := hcCommand{}
-	c.opcode = hcShellStart
+	c := command{}
+	c.opcode = shellStart
 	c.opt1 = 0x0
 	c.opt2 = 0x0
 	c.opt3 = 0x0
@@ -109,13 +100,13 @@ func (h *HotCroissant) execute(command string) {
 	}
 
 	// Execute command
-	c = hcCommand{}
-	c.opcode = hcShellData
+	c = command{}
+	c.opcode = shellData
 	c.opt1 = 0x0
 	c.opt2 = 0x0
 	c.opt3 = 0x0
-	c.size = uint32(len(command))
-	c.data = append([]byte(command), 0x00)
+	c.size = uint32(len(commandLine))
+	c.data = append([]byte(commandLine), 0x00)
 	err = h.sendData(c)
 	if err != nil {
 		log.Warn("Error sending command: ", err)
@@ -125,8 +116,8 @@ func (h *HotCroissant) execute(command string) {
 	time.Sleep(2 * time.Second)
 
 	// Shut down shell
-	c = hcCommand{}
-	c.opcode = hcShellStop
+	c = command{}
+	c.opcode = shellStop
 	c.opt1 = 0x0
 	c.opt2 = 0x0
 	c.opt3 = 0x0
@@ -136,7 +127,8 @@ func (h *HotCroissant) execute(command string) {
 	}
 }
 
-func (h *HotCroissant) upload(source string, destination string) {
+// Upload sends a file to the connected agent.
+func (h *Handler) Upload(source string, destination string) {
 	if h.uploadJobs == nil {
 		h.uploadJobs = make(map[string]chan int32)
 	}
@@ -152,8 +144,8 @@ func (h *HotCroissant) upload(source string, destination string) {
 
 	log.Info("Starting upload job %s", jobName)
 
-	c := hcCommand{}
-	c.opcode = hcFileUpload
+	c := command{}
+	c.opcode = fileUpload
 	c.opt1 = int32(jobID)
 	c.opt2 = 0x0
 	c.opt3 = 0x0
@@ -186,8 +178,8 @@ func (h *HotCroissant) upload(source string, destination string) {
 			break
 		}
 
-		c = hcCommand{}
-		c.opcode = hcFileData
+		c = command{}
+		c.opcode = fileData
 		c.opt1 = int32(jobID)
 		c.opt2 = opt2
 		c.opt3 = int32(bytesRead)
@@ -200,8 +192,8 @@ func (h *HotCroissant) upload(source string, destination string) {
 	}
 
 	// Finish the file transfer
-	c = hcCommand{}
-	c.opcode = hcFileComplete
+	c = command{}
+	c.opcode = fileComplete
 	c.opt1 = int32(jobID)
 	c.opt2 = opt2
 	c.opt3 = 0x0
@@ -213,7 +205,8 @@ func (h *HotCroissant) upload(source string, destination string) {
 	log.Success("Upload job %s complete", jobName)
 }
 
-func (h *HotCroissant) download(source string, destination string) {
+// Download retrieves a file from the connected agent.
+func (h *Handler) Download(source string, destination string) {
 	if h.downloadJobs == nil {
 		h.downloadJobs = make(map[string]*os.File)
 	}
@@ -233,8 +226,8 @@ func (h *HotCroissant) download(source string, destination string) {
 
 	log.Info("Starting download job %s", jobName)
 
-	c := hcCommand{}
-	c.opcode = hcFileDownload
+	c := command{}
+	c.opcode = fileDownload
 	c.opt1 = int32(jobID)
 	c.opt2 = 0x0
 	c.opt3 = 0x0
@@ -246,9 +239,9 @@ func (h *HotCroissant) download(source string, destination string) {
 	}
 }
 
-func (h *HotCroissant) processData() {
+func (h *Handler) processData() {
 	for {
-		ec := hcEncodedCommand{}
+		ec := encodedCommand{}
 
 		b, err := queue.Get(h.dataChan, 4)
 		if err != nil {
@@ -290,17 +283,16 @@ func (h *HotCroissant) processData() {
 	}
 }
 
-func (h *HotCroissant) proccessCommand(command hcCommand) {
+func (h *Handler) proccessCommand(command command) {
 	logCommand(command)
 
 	switch command.opcode {
-	case hcBeacon:
-		a := &Agent{}
+	case beacon:
 		hash := sha256.Sum256(command.data)
-		a.ID = hex.EncodeToString(hash[:])
+		id := hex.EncodeToString(hash[:])
 
-		h.delegate.AgentConnected(a)
-	case hcFileUpload:
+		h.delegate.AgentConnected(id)
+	case fileUpload:
 		if command.opt2 == -1 {
 			log.Warn("Error opening destination file")
 		}
@@ -309,7 +301,7 @@ func (h *HotCroissant) proccessCommand(command hcCommand) {
 		if response, ok := h.uploadJobs[jobName]; ok {
 			response <- command.opt2
 		}
-	case hcFileStatus:
+	case fileStatus:
 		if strings.HasPrefix(string(command.data), "Failed to open") {
 			log.Warn("Error opening source file")
 			jobName := strconv.FormatInt(int64(uint32(command.opt1)), 16)
@@ -320,14 +312,14 @@ func (h *HotCroissant) proccessCommand(command hcCommand) {
 				delete(h.downloadJobs, jobName)
 			}
 		}
-	case hcFileData:
+	case fileData:
 		jobName := strconv.FormatInt(int64(uint32(command.opt1)), 16)
 
 		file, ok := h.downloadJobs[jobName]
 		if ok {
 			file.Write(command.data)
 		}
-	case hcFileComplete:
+	case fileComplete:
 		jobName := strconv.FormatInt(int64(uint32(command.opt1)), 16)
 
 		file, ok := h.downloadJobs[jobName]
@@ -337,12 +329,12 @@ func (h *HotCroissant) proccessCommand(command hcCommand) {
 		}
 
 		log.Success("Download job %s complete", jobName)
-	case hcShellData:
+	case shellData:
 		log.Info(string(command.data))
 	}
 }
 
-func logCommand(c hcCommand) {
+func logCommand(c command) {
 	log.Debug("HotCroissant Command")
 	log.Debug("Opcode: 0x%08x", c.opcode)
 	log.Debug("  Opt1: 0x%08x", uint32(c.opt1))
@@ -352,40 +344,40 @@ func logCommand(c hcCommand) {
 	log.Debug("  Data:\n%s", hex.Dump(c.data))
 }
 
-func decodeCommand(ec hcEncodedCommand) (hcCommand, error) {
+func decodeCommand(ec encodedCommand) (command, error) {
 	decrypted := cipher(ec.data)
 
 	decompressed, err := decompress(decrypted)
 	if err != nil {
-		return hcCommand{}, err
+		return command{}, err
 	}
 
 	buf := bytes.NewReader(decompressed)
 
-	c := hcCommand{}
+	c := command{}
 	err = binary.Read(buf, binary.LittleEndian, &c.opcode)
 	if err != nil {
-		return hcCommand{}, err
+		return command{}, err
 	}
 
 	err = binary.Read(buf, binary.LittleEndian, &c.opt1)
 	if err != nil {
-		return hcCommand{}, err
+		return command{}, err
 	}
 
 	err = binary.Read(buf, binary.LittleEndian, &c.opt2)
 	if err != nil {
-		return hcCommand{}, err
+		return command{}, err
 	}
 
 	err = binary.Read(buf, binary.LittleEndian, &c.opt3)
 	if err != nil {
-		return hcCommand{}, err
+		return command{}, err
 	}
 
 	err = binary.Read(buf, binary.LittleEndian, &c.size)
 	if err != nil {
-		return hcCommand{}, err
+		return command{}, err
 	}
 
 	c.data = decompressed[20:]
@@ -393,7 +385,7 @@ func decodeCommand(ec hcEncodedCommand) (hcCommand, error) {
 	return c, nil
 }
 
-func (h *HotCroissant) sendData(c hcCommand) error {
+func (h *Handler) sendData(c command) error {
 	ec, err := encodeCommand(c)
 	if err != nil {
 		return err
@@ -413,7 +405,7 @@ func (h *HotCroissant) sendData(c hcCommand) error {
 	return nil
 }
 
-func encodeCommand(c hcCommand) (hcEncodedCommand, error) {
+func encodeCommand(c command) (encodedCommand, error) {
 	var b bytes.Buffer
 
 	binary.Write(&b, binary.LittleEndian, c.opcode)
@@ -426,7 +418,7 @@ func encodeCommand(c hcCommand) (hcEncodedCommand, error) {
 
 	log.Debug("encoded\n" + hex.Dump(data))
 
-	ec := hcEncodedCommand{}
+	ec := encodedCommand{}
 	ec.uncompressedSize = uint32(len(data))
 
 	compressed, err := compress(data)

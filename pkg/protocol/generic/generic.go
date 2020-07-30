@@ -1,47 +1,50 @@
-package c2
+package generic
 
 import (
 	"encoding/hex"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
-// A Generic protocol handler simply logs information about connections and
-// the data received.
-type Generic struct {
-	delegate ProtocolDelegate
+// A Handler represents a generic protocol handler that simply logs information
+// about connections and the data received.
+type Handler struct {
+	delegate protocol.Delegate
 }
 
 // SetDelegate saves the delegate for later use.
-func (g *Generic) SetDelegate(delegate ProtocolDelegate) {
-	g.delegate = delegate
+func (h *Handler) SetDelegate(delegate protocol.Delegate) {
+	h.delegate = delegate
 }
 
 // ReceiveData just logs information about data received.
-func (g *Generic) ReceiveData(data []byte) {
+func (h *Handler) ReceiveData(data []byte) {
 	log.Debug("received\n" + hex.Dump(data))
 
-	a := &Agent{}
-	g.delegate.AgentConnected(a)
+	h.delegate.AgentConnected("")
 }
 
-// SendCommand sends a command to the connected agent.
-func (g *Generic) SendCommand(command interface{}) {
-	switch command.(type) {
-	case ExecuteCommand:
-		log.Warn("generic doesn't support command execution")
-	case UploadCommand:
-		log.Warn("generic doesn't support file upload")
-	case DownloadCommand:
-		log.Warn("generic doesn't support file download")
-	}
+// Execute runs a command on the connected agent.
+func (h *Handler) Execute(name string, args []string) {
+	log.Warn("generic doesn't support command execution")
+}
+
+// Upload sends a file to the connected agent.
+func (h *Handler) Upload(source string, destination string) {
+	log.Warn("generic doesn't support file upload")
+}
+
+// Download retrieves a file from the connected agent.
+func (h *Handler) Download(source string, destination string) {
+	log.Warn("generic doesn't support file download")
 }
 
 // Close cleans up any uzed resources
-func (g *Generic) Close() {
+func (h *Handler) Close() {
 }
 
 // NeedsTLS returns whether the protocol runs over TLS or not.
-func (g *Generic) NeedsTLS() bool {
+func (h *Handler) NeedsTLS() bool {
 	return false
 }

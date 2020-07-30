@@ -1,4 +1,4 @@
-package c2
+package rifdoor
 
 import (
 	"crypto/sha256"
@@ -8,24 +8,25 @@ import (
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/internal/queue"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 )
 
 const (
-	rifdoorBeacon   uint32 = 0x9e2
-	rifdoorRequest  uint32 = 0x4e3a
-	rifdoorResponse uint32 = 0xa021
-	rifdoorEnd      uint32 = 0x1055
+	beacon   uint32 = 0x9e2
+	request  uint32 = 0x4e3a
+	response uint32 = 0xa021
+	end      uint32 = 0x1055
 )
 
-// Rifdoor is a protocol handler capable of communicating with the Rifdoor
-// malware family.
-type Rifdoor struct {
-	delegate ProtocolDelegate
+// Handler is a Rifdoor protocol handler capable of communicating with the
+// Rifdoor malware family.
+type Handler struct {
+	delegate protocol.Delegate
 	dataChan chan byte
 	checksum uint32
 }
 
-type rifdoorCommand struct {
+type command struct {
 	opcode   uint32
 	checksum uint32
 	zero     uint32
@@ -34,138 +35,140 @@ type rifdoorCommand struct {
 }
 
 // SetDelegate saves the delegate for later use.
-func (r *Rifdoor) SetDelegate(delegate ProtocolDelegate) {
-	r.delegate = delegate
+func (h *Handler) SetDelegate(delegate protocol.Delegate) {
+	h.delegate = delegate
 }
 
 // ReceiveData saves the network data and processes it when a full command has
 // been received.
-func (r *Rifdoor) ReceiveData(data []byte) {
+func (h *Handler) ReceiveData(data []byte) {
 	log.Debug("received\n" + hex.Dump(data))
 
-	if r.dataChan == nil {
-		r.dataChan = make(chan byte, len(data))
-		go r.processData()
+	if h.dataChan == nil {
+		h.dataChan = make(chan byte, len(data))
+		go h.processData()
 	}
 
-	queue.Put(r.dataChan, data)
+	queue.Put(h.dataChan, data)
 }
 
-// SendCommand sends a command to the connected agent.
-func (r *Rifdoor) SendCommand(command interface{}) {
-	switch c := command.(type) {
-	case ExecuteCommand:
-		commandLine := strings.TrimSpace(c.Name + " " + strings.Join(c.Args, " "))
+// Execute runs a command on the connected agent.
+func (h *Handler) Execute(name string, args []string) {
+	commandLine := strings.TrimSpace(name + " " + strings.Join(args, " "))
 
-		rc := rifdoorCommand{
-			opcode:   rifdoorRequest,
-			checksum: r.checksum,
-			zero:     0x0,
-			size:     uint32(len(commandLine)),
-			data:     []byte(commandLine),
-		}
-		data := r.encodeCommand(rc)
-		r.delegate.SendData(data)
-
-		rc = rifdoorCommand{
-			opcode:   rifdoorEnd,
-			checksum: r.checksum,
-			zero:     0x0,
-			size:     0x0,
-		}
-		data = r.encodeCommand(rc)
-		r.delegate.SendData(data)
-	case UploadCommand:
-		log.Warn("rifdoor doesn't support file upload")
-	case DownloadCommand:
-		log.Warn("rifdoor doesn't support file download")
+	rc := command{
+		opcode:   request,
+		checksum: h.checksum,
+		zero:     0x0,
+		size:     uint32(len(commandLine)),
+		data:     []byte(commandLine),
 	}
+	data := h.encodeCommand(rc)
+	h.delegate.SendData(data)
+
+	rc = command{
+		opcode:   end,
+		checksum: h.checksum,
+		zero:     0x0,
+		size:     0x0,
+	}
+	data = h.encodeCommand(rc)
+	h.delegate.SendData(data)
 }
 
-func (r *Rifdoor) encodeCommand(command rifdoorCommand) []byte {
-	result := make([]byte, 16+command.size)
+// Upload sends a file to the connected agent.
+func (h *Handler) Upload(source string, destination string) {
+	log.Warn("rifdoor doesn't support file upload")
+}
 
-	binary.LittleEndian.PutUint32(result[0:], command.opcode)
-	binary.LittleEndian.PutUint32(result[4:], command.checksum)
-	binary.LittleEndian.PutUint32(result[8:], command.zero)
-	binary.LittleEndian.PutUint32(result[12:], command.size)
+// Download retrieves a file from the connected agent.
+func (h *Handler) Download(source string, destination string) {
+	log.Warn("rifdoor doesn't support file download")
+}
 
-	if command.size > 0 {
-		copy(result[16:], rifdoorCipher(command.data))
+func (h *Handler) encodeCommand(cmd command) []byte {
+	result := make([]byte, 16+cmd.size)
+
+	binary.LittleEndian.PutUint32(result[0:], cmd.opcode)
+	binary.LittleEndian.PutUint32(result[4:], cmd.checksum)
+	binary.LittleEndian.PutUint32(result[8:], cmd.zero)
+	binary.LittleEndian.PutUint32(result[12:], cmd.size)
+
+	if cmd.size > 0 {
+		copy(result[16:], cipher(cmd.data))
 	}
 
 	return result
 }
 
 // Close cleans up any uzed resources.
-func (r *Rifdoor) Close() {
-	close(r.dataChan)
+func (h *Handler) Close() {
+	close(h.dataChan)
 }
 
 // NeedsTLS returns whether the protocol runs over TLS or not.
-func (r *Rifdoor) NeedsTLS() bool {
+func (h *Handler) NeedsTLS() bool {
 	return false
 }
 
-func (r *Rifdoor) processData() {
+func (h *Handler) processData() {
 	for {
-		command := rifdoorCommand{}
+		cmd := command{}
 
 		// Receive the header
-		b, err := queue.Get(r.dataChan, 16)
+		b, err := queue.Get(h.dataChan, 16)
 		if err != nil {
-			r.delegate.CloseConnection()
+			h.delegate.CloseConnection()
 			return
 		}
 
-		command.opcode = binary.LittleEndian.Uint32(b[0:4])
-		command.checksum = binary.LittleEndian.Uint32(b[4:8])
-		command.zero = binary.LittleEndian.Uint32(b[8:12])
-		command.size = binary.LittleEndian.Uint32(b[12:16])
+		cmd.opcode = binary.LittleEndian.Uint32(b[0:4])
+		cmd.checksum = binary.LittleEndian.Uint32(b[4:8])
+		cmd.zero = binary.LittleEndian.Uint32(b[8:12])
+		cmd.size = binary.LittleEndian.Uint32(b[12:16])
 
-		if command.size > 0 {
-			b, err = queue.Get(r.dataChan, int(command.size))
+		if cmd.size > 0 {
+			b, err = queue.Get(h.dataChan, int(cmd.size))
 			if err != nil {
-				r.delegate.CloseConnection()
+				h.delegate.CloseConnection()
 				return
 			}
 
-			command.data = rifdoorCipher(b)
+			cmd.data = cipher(b)
 		}
 
-		r.processCommand(command)
+		h.processCommand(cmd)
 	}
 }
 
-func (r *Rifdoor) processCommand(command rifdoorCommand) {
-	r.logCommand(command)
+func (h *Handler) processCommand(cmd command) {
+	h.logCommand(cmd)
 
-	r.checksum = command.checksum
+	h.checksum = cmd.checksum
 
-	switch command.opcode {
-	case rifdoorBeacon:
-		a := &Agent{}
+	switch cmd.opcode {
+	case beacon:
 		data := make([]byte, 4)
-		binary.LittleEndian.PutUint32(data, command.checksum)
+		binary.LittleEndian.PutUint32(data, cmd.checksum)
 		hash := sha256.Sum256(data)
-		a.ID = hex.EncodeToString(hash[:])
+		id := hex.EncodeToString(hash[:])
 
-		r.delegate.AgentConnected(a)
-	case rifdoorResponse:
-		log.Info(string(command.data))
-	case rifdoorEnd:
-		r.delegate.CloseConnection()
+		h.delegate.AgentConnected(id)
+	case response:
+		log.Info(string(cmd.data))
+	case end:
+		h.delegate.CloseConnection()
 	}
 }
 
-func (r *Rifdoor) logCommand(command rifdoorCommand) {
+func (h *Handler) logCommand(cmd command) {
 	log.Debug("Rifdoor Command")
-	log.Debug("  Opcode: 0x%08x", command.opcode)
-	log.Debug("Checksum: 0x%08x", command.checksum)
-	log.Debug("    Zero: 0x%08x", command.zero)
-	log.Debug("    Size: 0x%08x", command.size)
-	if command.data != nil {
-		log.Debug("    Data:\n%s", hex.Dump(command.data))
+	log.Debug("  Opcode: 0x%08x", cmd.opcode)
+	log.Debug("Checksum: 0x%08x", cmd.checksum)
+	log.Debug("    Zero: 0x%08x", cmd.zero)
+	log.Debug("    Size: 0x%08x", cmd.size)
+	if cmd.data != nil {
+		log.Debug("    Data:\n%s", hex.Dump(cmd.data))
 	}
 }
 
@@ -181,7 +184,7 @@ func hibyte(i int) int {
 	return (i & 0xFF000000) >> 24
 }
 
-func rifdoorCipher(input []byte) []byte {
+func cipher(input []byte) []byte {
 	output := make([]byte, len(input))
 
 	key1 := 0x1A2C
