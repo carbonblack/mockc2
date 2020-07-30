@@ -4,12 +4,17 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net"
 	"sync"
 	"time"
 
 	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol/generic"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol/hotcroissant"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol/rifdoor"
 )
 
 // A Server represents a running mock C2 server.
@@ -23,13 +28,26 @@ type Server struct {
 type c2Conn struct {
 	conn    net.Conn
 	quit    chan interface{}
-	handler ProtocolHandler
+	handler protocol.Handler
+}
+
+func handlerFromString(protocol string) (protocol.Handler, error) {
+	switch protocol {
+	case "generic":
+		return &generic.Handler{}, nil
+	case "hotcroissant":
+		return &hotcroissant.Handler{}, nil
+	case "rifdoor":
+		return &rifdoor.Handler{}, nil
+	default:
+		return nil, fmt.Errorf("unknown protocol %s", protocol)
+	}
 }
 
 // NewServer creates a new mock C2 server and starts it listening on the
 // provided address.
 func NewServer(protocol string, address string) (*Server, error) {
-	handler, err := NewProtocolHandler(protocol)
+	handler, err := handlerFromString(protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +125,7 @@ func (s *Server) serve() {
 }
 
 func newC2Conn(netConn net.Conn, s *Server) (*c2Conn, error) {
-	handler, err := NewProtocolHandler(s.protocol)
+	handler, err := handlerFromString(s.protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -167,15 +185,15 @@ func (c *c2Conn) SendData(data []byte) {
 	log.Debug("sent\n" + hex.Dump(data))
 }
 
-func (c *c2Conn) SendCommand(command interface{}) {
-	go c.handler.SendCommand(command)
-}
-
 func (c *c2Conn) CloseConnection() {
 	c.conn.Close()
 }
 
-func (c *c2Conn) AgentConnected(a *Agent) {
+func (c *c2Conn) AgentConnected(id string) {
+	a := &Agent{
+		ID: id,
+	}
+
 	// Default Agent ID to a hash of the IP if not specified
 	if a.ID == "" {
 		addr := c.conn.RemoteAddr().String()

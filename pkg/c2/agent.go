@@ -21,7 +21,14 @@ type Agent struct {
 
 // SendCommand instructs the agent to run the given command.
 func (a *Agent) SendCommand(command interface{}) {
-	a.conn.SendCommand(command)
+	switch c := command.(type) {
+	case ExecuteCommand:
+		go a.conn.handler.Execute(c.Name, c.Args)
+	case UploadCommand:
+		go a.conn.handler.Upload(c.Source, c.Destination)
+	case DownloadCommand:
+		go a.conn.handler.Download(c.Source, c.Destination)
+	}
 }
 
 // Agents returns the list of agents that have been seen.
