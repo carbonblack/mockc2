@@ -14,6 +14,7 @@ import (
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/generic"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/hotcroissant"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol/mata"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/rifdoor"
 )
 
@@ -37,6 +38,8 @@ func handlerFromString(protocol string) (protocol.Handler, error) {
 		return &generic.Handler{}, nil
 	case "hotcroissant":
 		return &hotcroissant.Handler{}, nil
+	case "mata":
+		return &mata.Handler{}, nil
 	case "rifdoor":
 		return &rifdoor.Handler{}, nil
 	default:
