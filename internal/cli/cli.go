@@ -168,7 +168,7 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 	case "help", "?":
 		mainMenuCommand(cmd)
 	case "interact":
-		if c2.AgentExists(cmd[1]) {
+		if len(cmd) >= 2 && c2.AgentExists(cmd[1]) {
 			s.currentAgentID = cmd[1]
 			s.setMenu(agent)
 		} else {
