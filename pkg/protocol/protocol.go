@@ -12,6 +12,7 @@ type Delegate interface {
 type Handler interface {
 	NeedsTLS() bool
 	SetDelegate(delegate Delegate)
+	Accept()
 	ReceiveData(data []byte)
 	Execute(name string, args []string)
 	Upload(source string, destination string)
