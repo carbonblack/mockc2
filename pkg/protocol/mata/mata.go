@@ -70,6 +70,11 @@ func (h *Handler) SetDelegate(delegate protocol.Delegate) {
 	h.delegate = delegate
 }
 
+// Accept gives the Handler a chance to do something as soon as an agent
+// connects.
+func (h *Handler) Accept() {
+}
+
 // ReceiveData just logs information about data receiveh.
 func (h *Handler) ReceiveData(data []byte) {
 	log.Debug("received\n" + hex.Dump(data))

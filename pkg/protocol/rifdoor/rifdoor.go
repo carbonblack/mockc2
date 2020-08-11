@@ -39,6 +39,11 @@ func (h *Handler) SetDelegate(delegate protocol.Delegate) {
 	h.delegate = delegate
 }
 
+// Accept gives the Handler a chance to do something as soon as an agent
+// connects.
+func (h *Handler) Accept() {
+}
+
 // ReceiveData saves the network data and processes it when a full command has
 // been received.
 func (h *Handler) ReceiveData(data []byte) {
