@@ -26,20 +26,20 @@ const (
 
 const (
 	opNone           uint32 = 0x00000000
-	opBeacon1               = 0x00020000
-	opBeacon2               = 0x00020100
-	opBeacon3               = 0x00020200
-	opSendRC4               = 0x00020300
-	opSuccess               = 0x00020500
-	opFailure               = 0x00020600
-	opHostInfo              = 0x00000700
-	opExecute               = 0x00010000
-	opReverseExecute        = 0x00010002
-	opFileUpload            = 0x00010100
-	opFileDownload          = 0x00010101
-	opFileDelete            = 0x00010103
-	opFileScanDir           = 0x00010104
-	opFileURLGet            = 0x00010110
+	opBeacon1        uint32 = 0x00020000
+	opBeacon2        uint32 = 0x00020100
+	opBeacon3        uint32 = 0x00020200
+	opSendRC4        uint32 = 0x00020300
+	opSuccess        uint32 = 0x00020500
+	opFailure        uint32 = 0x00020600
+	opHostInfo       uint32 = 0x00000700
+	opExecute        uint32 = 0x00010000
+	opReverseExecute uint32 = 0x00010002
+	opFileUpload     uint32 = 0x00010100
+	opFileDownload   uint32 = 0x00010101
+	opFileDelete     uint32 = 0x00010103
+	opFileScanDir    uint32 = 0x00010104
+	opFileURLGet     uint32 = 0x00010110
 )
 
 // Handler is a Mata protocol handler.
