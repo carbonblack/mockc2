@@ -17,6 +17,7 @@ import (
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/hotcroissant"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/mata"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/rifdoor"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol/slickshoes"
 )
 
 // A Server represents a running mock C2 server.
@@ -45,6 +46,8 @@ func handlerFromString(protocol string) (protocol.Handler, error) {
 		return &mata.Handler{}, nil
 	case "rifdoor":
 		return &rifdoor.Handler{}, nil
+	case "slickshoes":
+		return &slickshoes.Handler{}, nil
 	default:
 		return nil, fmt.Errorf("unknown protocol %s", protocol)
 	}
