@@ -20,15 +20,15 @@ import (
 )
 
 const (
-	beacon       = 0x7c8
-	fileData     = 0x7e4
-	fileComplete = 0x7e5
-	fileDownload = 0x7e6
-	fileStatus   = 0x7e7
-	fileUpload   = 0x7ed
-	shellStart   = 0xfa1
-	shellData    = 0xfa2
-	shellStop    = 0xfa3
+	beacon       uint32 = 0x7c8
+	fileData     uint32 = 0x7e4
+	fileComplete uint32 = 0x7e5
+	fileDownload uint32 = 0x7e6
+	fileStatus   uint32 = 0x7e7
+	fileUpload   uint32 = 0x7ed
+	shellStart   uint32 = 0xfa1
+	shellData    uint32 = 0xfa2
+	shellStop    uint32 = 0xfa3
 )
 
 // Handler is a HotCroissant protocol handler capable of communicating with the
