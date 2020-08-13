@@ -99,7 +99,7 @@ func (h *Handler) Execute(name string, args []string) {
 	c.opt1 = 0x0
 	c.opt2 = 0x0
 	c.opt3 = 0x0
-	err := h.sendData(c)
+	err := h.sendCommand(c)
 	if err != nil {
 		log.Warn("Error sending command: ", err)
 	}
@@ -112,7 +112,7 @@ func (h *Handler) Execute(name string, args []string) {
 	c.opt3 = 0x0
 	c.size = uint32(len(commandLine))
 	c.data = append([]byte(commandLine), 0x00)
-	err = h.sendData(c)
+	err = h.sendCommand(c)
 	if err != nil {
 		log.Warn("Error sending command: ", err)
 	}
@@ -126,7 +126,7 @@ func (h *Handler) Execute(name string, args []string) {
 	c.opt1 = 0x0
 	c.opt2 = 0x0
 	c.opt3 = 0x0
-	err = h.sendData(c)
+	err = h.sendCommand(c)
 	if err != nil {
 		log.Warn("Error sending command: ", err)
 	}
@@ -156,7 +156,7 @@ func (h *Handler) Upload(source string, destination string) {
 	c.opt3 = 0x0
 	c.size = uint32(len(data))
 	c.data = append([]byte(data), 0x00)
-	err := h.sendData(c)
+	err := h.sendCommand(c)
 	if err != nil {
 		log.Warn("Error sending command: ", err)
 	}
@@ -190,7 +190,7 @@ func (h *Handler) Upload(source string, destination string) {
 		c.opt3 = int32(bytesRead)
 		c.size = uint32(bytesRead)
 		c.data = buf[:bytesRead]
-		err = h.sendData(c)
+		err = h.sendCommand(c)
 		if err != nil {
 			log.Warn("Error sending command: %v", err)
 		}
@@ -202,7 +202,7 @@ func (h *Handler) Upload(source string, destination string) {
 	c.opt1 = int32(jobID)
 	c.opt2 = opt2
 	c.opt3 = 0x0
-	err = h.sendData(c)
+	err = h.sendCommand(c)
 	if err != nil {
 		log.Warn("Error sending command: ", err)
 	}
@@ -238,7 +238,7 @@ func (h *Handler) Download(source string, destination string) {
 	c.opt3 = 0x0
 	c.size = uint32(len(data))
 	c.data = append([]byte(data), 0x00)
-	err = h.sendData(c)
+	err = h.sendCommand(c)
 	if err != nil {
 		log.Warn("Error sending command: ", err)
 	}
@@ -390,7 +390,7 @@ func decodeCommand(ec encodedCommand) (command, error) {
 	return c, nil
 }
 
-func (h *Handler) sendData(c command) error {
+func (h *Handler) sendCommand(c command) error {
 	ec, err := encodeCommand(c)
 	if err != nil {
 		return err
