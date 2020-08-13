@@ -13,6 +13,7 @@ import (
 	"megaman.genesis.local/sknight/mockc2/internal/log"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/bistromath"
+	"megaman.genesis.local/sknight/mockc2/pkg/protocol/crosswalk"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/generic"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/hotcroissant"
 	"megaman.genesis.local/sknight/mockc2/pkg/protocol/mata"
@@ -38,6 +39,8 @@ func handlerFromString(protocol string) (protocol.Handler, error) {
 	switch protocol {
 	case "bistromath":
 		return &bistromath.Handler{}, nil
+	case "crosswalk":
+		return &crosswalk.Handler{}, nil
 	case "generic":
 		return &generic.Handler{}, nil
 	case "hotcroissant":
