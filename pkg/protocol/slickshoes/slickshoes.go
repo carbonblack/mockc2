@@ -87,7 +87,7 @@ func (h *Handler) Execute(name string, args []string) {
 	commandLine := encodeWideString(strings.TrimSpace(name + " " + strings.Join(args, " ")))
 	data := append(commandLine, []byte{0x00, 0x00}...)
 
-	h.sendData(command{
+	h.sendCommand(command{
 		size:   uint32(len(data)),
 		opcode: opExecute,
 		opt:    0x0001,
@@ -105,7 +105,7 @@ func (h *Handler) Upload(source string, destination string) {
 	defer file.Close()
 
 	ws := append(encodeWideString(destination), []byte{0x00, 0x00}...)
-	h.sendData(command{
+	h.sendCommand(command{
 		size:   uint32(len(ws)),
 		opcode: opFileUpload,
 		opt:    0x0001,
@@ -124,7 +124,7 @@ func (h *Handler) Upload(source string, destination string) {
 			break
 		}
 
-		h.sendData(command{
+		h.sendCommand(command{
 			size:   uint32(bytesRead),
 			opcode: opFileUpload,
 			opt:    0x0000,
@@ -133,7 +133,7 @@ func (h *Handler) Upload(source string, destination string) {
 	}
 
 	// Finish the file transfer
-	h.sendData(command{
+	h.sendCommand(command{
 		size:   0x00000000,
 		opcode: opFileUpload,
 		opt:    0x0100,
@@ -145,7 +145,7 @@ func (h *Handler) Download(source string, destination string) {
 	h.fileName = destination
 
 	ws := append(encodeWideString(destination), []byte{0x00, 0x00}...)
-	h.sendData(command{
+	h.sendCommand(command{
 		size:   uint32(len(ws)),
 		opcode: opFileDownload,
 		opt:    0x0001,
@@ -244,7 +244,7 @@ func logCommand(c command) {
 	log.Debug("  Data:\n%s", hex.Dump(c.data))
 }
 
-func (h *Handler) sendData(cmd command) error {
+func (h *Handler) sendCommand(cmd command) error {
 	result := make([]byte, 10+len(cmd.data))
 
 	binary.LittleEndian.PutUint32(result[0:4], cmd.size)

