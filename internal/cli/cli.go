@@ -57,6 +57,10 @@ func (s *Shell) initCompleters() {
 	)
 
 	s.agentCompleter = readline.NewPrefixCompleter(
+		readline.PcItem("debug",
+			readline.PcItem("on"),
+			readline.PcItem("off"),
+		),
 		readline.PcItem("exec"),
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
@@ -192,6 +196,8 @@ func (s *Shell) mainMenuHandler(cmd []string) {
 
 func (s *Shell) agentMenuHandler(cmd []string) {
 	switch cmd[0] {
+	case "debug":
+		debugCommand(cmd)
 	case "download":
 		downloadCommand(s.currentAgentID, cmd)
 	case "exec":
