@@ -10,8 +10,8 @@ a custom C2 protocol.
 
 ## Network Setup
 
-The C2 IP address is stored as ASCII. Use a hex editor to find a replace the
-C2 IP address with the IP address of your mock C2 server.
+The C2 IP address is stored as an ASCII string. Use a hex editor to find and
+replace the C2 IP address with the IP address of your mock C2 server.
 
 ## Links
 
