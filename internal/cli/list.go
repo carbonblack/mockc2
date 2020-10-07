@@ -6,7 +6,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"megaman.genesis.local/sknight/mockc2/pkg/c2"
+	"github.com/carbonblack/mockc2/pkg/c2"
 )
 
 func listCommand(cmd []string) {

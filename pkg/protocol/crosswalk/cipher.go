@@ -6,7 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/md5"
 
-	"megaman.genesis.local/sknight/mockc2/internal/log"
+	"github.com/carbonblack/mockc2/internal/log"
 )
 
 func aesEncrypt(src []byte, key []byte) []byte {

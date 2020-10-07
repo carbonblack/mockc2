@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/internal/queue"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
+	"github.com/carbonblack/mockc2/internal/log"
+	"github.com/carbonblack/mockc2/internal/queue"
+	"github.com/carbonblack/mockc2/pkg/protocol"
 )
 
 const (

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"megaman.genesis.local/sknight/mockc2/internal/cli"
+	"github.com/carbonblack/mockc2/internal/cli"
 )
 
 func main() {

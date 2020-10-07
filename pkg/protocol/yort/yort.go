@@ -10,8 +10,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
+	"github.com/carbonblack/mockc2/internal/log"
+	"github.com/carbonblack/mockc2/pkg/protocol"
 )
 
 // TODO since HTTP is stateless we really need command queuing in order to send

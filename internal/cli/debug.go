@@ -1,6 +1,6 @@
 package cli
 
-import "megaman.genesis.local/sknight/mockc2/internal/log"
+import "github.com/carbonblack/mockc2/internal/log"
 
 func debugCommand(cmd []string) {
 	if len(cmd) == 2 {

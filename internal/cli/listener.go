@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/pkg/c2"
+	"github.com/carbonblack/mockc2/internal/log"
+	"github.com/carbonblack/mockc2/pkg/c2"
 )
 
 var serverList map[uint16]*c2.Server

@@ -1,8 +1,8 @@
 VERSION=$(shell git describe --tags)
 BUILD_DATE=`date +%FT%T%z`
 GOLDFLAGS += -s -w
-GOLDFLAGS += -X megaman.genesis.local/sknight/mockc2/pkg/version.Version=$(VERSION)
-GOLDFLAGS += -X megaman.genesis.local/sknight/mockc2/pkg/version.BuildDate=$(BUILD_DATE)
+GOLDFLAGS += -X github.com/carbonblack/mockc2/pkg/version.Version=$(VERSION)
+GOLDFLAGS += -X github.com/carbonblack/mockc2/pkg/version.BuildDate=$(BUILD_DATE)
 GOFLAGS = -ldflags "$(GOLDFLAGS)"
 
 darwin64:

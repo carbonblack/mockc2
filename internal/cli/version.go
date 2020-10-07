@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"megaman.genesis.local/sknight/mockc2/pkg/version"
+	"github.com/carbonblack/mockc2/pkg/version"
 )
 
 func versionCommand(cmd []string) {

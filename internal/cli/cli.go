@@ -8,8 +8,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/kballard/go-shellquote"
 
-	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/pkg/c2"
+	"github.com/carbonblack/mockc2/internal/log"
+	"github.com/carbonblack/mockc2/pkg/c2"
 )
 
 type shellMenu int

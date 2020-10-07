@@ -3,8 +3,8 @@ package generic
 import (
 	"encoding/hex"
 
-	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
+	"github.com/carbonblack/mockc2/internal/log"
+	"github.com/carbonblack/mockc2/pkg/protocol"
 )
 
 // A Handler represents a generic protocol handler that simply logs information
