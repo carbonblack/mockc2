@@ -10,16 +10,16 @@ import (
 	"sync"
 	"time"
 
-	"megaman.genesis.local/sknight/mockc2/internal/log"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol/bistromath"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol/crosswalk"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol/generic"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol/hotcroissant"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol/mata"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol/rifdoor"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol/slickshoes"
-	"megaman.genesis.local/sknight/mockc2/pkg/protocol/yort"
+	"github.com/carbonblack/mockc2/internal/log"
+	"github.com/carbonblack/mockc2/pkg/protocol"
+	"github.com/carbonblack/mockc2/pkg/protocol/bistromath"
+	"github.com/carbonblack/mockc2/pkg/protocol/crosswalk"
+	"github.com/carbonblack/mockc2/pkg/protocol/generic"
+	"github.com/carbonblack/mockc2/pkg/protocol/hotcroissant"
+	"github.com/carbonblack/mockc2/pkg/protocol/mata"
+	"github.com/carbonblack/mockc2/pkg/protocol/rifdoor"
+	"github.com/carbonblack/mockc2/pkg/protocol/slickshoes"
+	"github.com/carbonblack/mockc2/pkg/protocol/yort"
 )
 
 // A Server represents a running mock C2 server.

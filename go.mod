@@ -1,4 +1,4 @@
-module megaman.genesis.local/sknight/mockc2
+module github.com/carbonblack/mockc2
 
 go 1.14
 
