@@ -84,6 +84,7 @@ rather than trying to route out over the internet.
 * [CROSSWALK](docs/crosswalk.md)
 * [HOTCROISSANT](docs/hotcroissant.md)
 * [MATA](docs/mata.md)
+* [ObliqueRAT](docs/obliquerat.md)
 * [Rifdoor](docs/rifdoor.md)
 * [SLICKSHOES](docs/slickshoes.md)
 * [Yort](docs/yort.md)

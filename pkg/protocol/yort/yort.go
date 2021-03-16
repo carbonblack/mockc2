@@ -127,17 +127,17 @@ func (h *Handler) processData() {
 
 // Execute runs a command on the connected agent.
 func (h *Handler) Execute(name string, args []string) {
-	log.Warn("generic doesn't support command execution")
+	log.Warn("yort doesn't support command execution")
 }
 
 // Upload sends a file to the connected agent.
 func (h *Handler) Upload(source string, destination string) {
-	log.Warn("generic doesn't support file upload")
+	log.Warn("yort doesn't support file upload")
 }
 
 // Download retrieves a file from the connected agent.
 func (h *Handler) Download(source string, destination string) {
-	log.Warn("generic doesn't support file download")
+	log.Warn("yort doesn't support file download")
 }
 
 // Close cleans up any uzed resources
