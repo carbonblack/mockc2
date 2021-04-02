@@ -47,6 +47,7 @@ func (s *Shell) initCompleters() {
 				readline.PcItem("hotcroissant"),
 				readline.PcItem("mata"),
 				readline.PcItem("obliquerat"),
+				readline.PcItem("redxor"),
 				readline.PcItem("rifdoor"),
 				readline.PcItem("slickshoes"),
 				readline.PcItem("yort"),
