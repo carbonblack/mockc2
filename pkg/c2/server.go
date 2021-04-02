@@ -18,6 +18,7 @@ import (
 	"github.com/carbonblack/mockc2/pkg/protocol/hotcroissant"
 	"github.com/carbonblack/mockc2/pkg/protocol/mata"
 	"github.com/carbonblack/mockc2/pkg/protocol/obliquerat"
+	"github.com/carbonblack/mockc2/pkg/protocol/redxor"
 	"github.com/carbonblack/mockc2/pkg/protocol/rifdoor"
 	"github.com/carbonblack/mockc2/pkg/protocol/slickshoes"
 	"github.com/carbonblack/mockc2/pkg/protocol/yort"
@@ -51,6 +52,8 @@ func handlerFromString(protocol string) (protocol.Handler, error) {
 		return &mata.Handler{}, nil
 	case "obliquerat":
 		return &obliquerat.Handler{}, nil
+	case "redxor":
+		return &redxor.Handler{}, nil
 	case "rifdoor":
 		return &rifdoor.Handler{}, nil
 	case "slickshoes":

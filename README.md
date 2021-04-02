@@ -85,6 +85,7 @@ rather than trying to route out over the internet.
 * [HOTCROISSANT](docs/hotcroissant.md)
 * [MATA](docs/mata.md)
 * [ObliqueRAT](docs/obliquerat.md)
+* [RedXOR](docs/redxor.md)
 * [Rifdoor](docs/rifdoor.md)
 * [SLICKSHOES](docs/slickshoes.md)
 * [Yort](docs/yort.md)
