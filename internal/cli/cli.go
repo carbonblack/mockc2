@@ -50,6 +50,7 @@ func (s *Shell) initCompleters() {
 				readline.PcItem("redxor"),
 				readline.PcItem("rifdoor"),
 				readline.PcItem("slickshoes"),
+				readline.PcItem("tigerrat"),
 				readline.PcItem("yort"),
 			),
 			readline.PcItem("stop"),
