@@ -144,7 +144,7 @@ func (h *Handler) Upload(source string, destination string) {
 func (h *Handler) Download(source string, destination string) {
 	h.fileName = destination
 
-	ws := append(encodeWideString(destination), []byte{0x00, 0x00}...)
+	ws := append(encodeWideString(source), []byte{0x00, 0x00}...)
 	h.sendCommand(command{
 		size:   uint32(len(ws)),
 		opcode: opFileDownload,
