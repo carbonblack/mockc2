@@ -88,4 +88,5 @@ rather than trying to route out over the internet.
 * [RedXOR](docs/redxor.md)
 * [Rifdoor](docs/rifdoor.md)
 * [SLICKSHOES](docs/slickshoes.md)
+* [TigerRAT](docs/tigerrat.md)
 * [Yort](docs/yort.md)
