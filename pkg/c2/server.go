@@ -21,6 +21,7 @@ import (
 	"github.com/carbonblack/mockc2/pkg/protocol/redxor"
 	"github.com/carbonblack/mockc2/pkg/protocol/rifdoor"
 	"github.com/carbonblack/mockc2/pkg/protocol/slickshoes"
+	"github.com/carbonblack/mockc2/pkg/protocol/tigerrat"
 	"github.com/carbonblack/mockc2/pkg/protocol/yort"
 )
 
@@ -58,6 +59,8 @@ func handlerFromString(protocol string) (protocol.Handler, error) {
 		return &rifdoor.Handler{}, nil
 	case "slickshoes":
 		return &slickshoes.Handler{}, nil
+	case "tigerrat":
+		return &tigerrat.Handler{}, nil		
 	case "yort":
 		return &yort.Handler{}, nil
 	default:
